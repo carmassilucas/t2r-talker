@@ -1,0 +1,19 @@
+services:
+
+  postgres:
+    image: postgres:latest
+    container_name: t2r-pg
+    ports:
+      - "5432:5432"
+    expose:
+      - "5432"
+    environment:
+      POSTGRES_DB: t2r-pg
+      POSTGRES_USER: t2r-user
+      POSTGRES_PASSWORD: t2r-pass
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:
+    driver: local
