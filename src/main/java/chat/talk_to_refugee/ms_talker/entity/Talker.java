@@ -65,6 +65,14 @@ public class Talker {
         this.type = type;
     }
 
+    public UUID getId() {
+        return id;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;

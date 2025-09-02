@@ -1,5 +1,7 @@
 package chat.talk_to_refugee.ms_talker.resource;
 
+import chat.talk_to_refugee.ms_talker.resource.dto.AuthRequest;
+import chat.talk_to_refugee.ms_talker.resource.dto.AuthResponse;
 import chat.talk_to_refugee.ms_talker.resource.dto.CreateTalker;
 import chat.talk_to_refugee.ms_talker.service.TalkerService;
 import jakarta.validation.Valid;
@@ -24,5 +26,10 @@ public class TalkerResource {
     public ResponseEntity<Void> create(@RequestBody @Valid CreateTalker requestBody) {
         this.service.create(requestBody);
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @PostMapping(value = "/auth")
+    public ResponseEntity<AuthResponse> auth(@RequestBody @Valid AuthRequest requestBody) {
+        return ResponseEntity.ok(this.service.auth(requestBody));
     }
 }

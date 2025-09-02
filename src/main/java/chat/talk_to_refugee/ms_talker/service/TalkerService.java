@@ -6,12 +6,20 @@ import chat.talk_to_refugee.ms_talker.exception.TalkerAlreadyExistsException;
 import chat.talk_to_refugee.ms_talker.exception.TypeNotFoundException;
 import chat.talk_to_refugee.ms_talker.exception.UnderageException;
 import chat.talk_to_refugee.ms_talker.repository.TalkerRepository;
+import chat.talk_to_refugee.ms_talker.resource.dto.AuthRequest;
+import chat.talk_to_refugee.ms_talker.resource.dto.AuthResponse;
 import chat.talk_to_refugee.ms_talker.resource.dto.CreateTalker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.time.LocalDate;
 
 @Service
@@ -20,11 +28,19 @@ public class TalkerService {
     private static final Logger log = LoggerFactory.getLogger(TalkerService.class);
 
     private final TalkerRepository repository;
-    private final PasswordEncoder encoder;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtEncoder jwtEncoder;
 
-    public TalkerService(TalkerRepository repository, PasswordEncoder encoder) {
+    private final String applicationName;
+
+    public TalkerService(TalkerRepository repository,
+                         PasswordEncoder passwordEncoder,
+                         JwtEncoder jwtEncoder,
+                         @Value("${spring.application.name}") String applicationName) {
         this.repository = repository;
-        this.encoder = encoder;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtEncoder = jwtEncoder;
+        this.applicationName = applicationName;
     }
 
     public void create(CreateTalker requestBody) {
@@ -50,7 +66,7 @@ public class TalkerService {
                     requestBody.fullName(),
                     birthDate,
                     requestBody.email(),
-                    encoder.encode(requestBody.password()),
+                    this.passwordEncoder.encode(requestBody.password()),
                     type.get()
             );
 
@@ -59,5 +75,30 @@ public class TalkerService {
         } catch (IllegalArgumentException ex) {
             throw new TypeNotFoundException();
         }
+    }
+
+    public AuthResponse auth(AuthRequest requestBody) {
+        var talker = this.repository.findByEmail(requestBody.email()).orElseThrow(() ->
+                new BadCredentialsException("user or password is invalid")
+        );
+
+        if (!this.passwordEncoder.matches(requestBody.password(), talker.getPassword())) {
+            throw new BadCredentialsException("user or password is invalid");
+        }
+
+        var now = Instant.now();
+        var expiresIn = 3600L;
+
+        var claims = JwtClaimsSet.builder()
+                .issuer(this.applicationName)
+                .subject(talker.getId().toString())
+                .issuedAt(now)
+                .expiresAt(now.plusSeconds(expiresIn))
+                .build();
+
+        var parameters = JwtEncoderParameters.from(claims);
+        var token = this.jwtEncoder.encode(parameters).getTokenValue();
+
+        return new AuthResponse(token, expiresIn);
     }
 }
