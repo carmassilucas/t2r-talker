@@ -1,7 +1,9 @@
 package chat.talk_to_refugee.ms_talker.service;
 
 import chat.talk_to_refugee.ms_talker.entity.Talker;
+import chat.talk_to_refugee.ms_talker.entity.TalkerType;
 import chat.talk_to_refugee.ms_talker.exception.TalkerAlreadyExistsException;
+import chat.talk_to_refugee.ms_talker.exception.TypeNotFoundException;
 import chat.talk_to_refugee.ms_talker.exception.UnderageException;
 import chat.talk_to_refugee.ms_talker.repository.TalkerRepository;
 import chat.talk_to_refugee.ms_talker.resource.dto.CreateTalker;
@@ -28,25 +30,34 @@ public class TalkerService {
     public void create(CreateTalker requestBody) {
         log.info("Solicitação de cadastro de usuário {}", requestBody.email());
 
-        var birthDate = LocalDate.parse(requestBody.birthDate());
-        if (birthDate.isAfter(LocalDate.now().minusYears(18))) {
-            log.warn("Não é permitido o cadastro de menores de idade");
-            throw new UnderageException();
+        try {
+            var type = TalkerType.Values.valueOf(
+                    requestBody.type().toUpperCase()
+            );
+
+            var birthDate = LocalDate.parse(requestBody.birthDate());
+            if (birthDate.isAfter(LocalDate.now().minusYears(18))) {
+                log.warn("Não é permitido o cadastro de menores de idade");
+                throw new UnderageException();
+            }
+
+            this.repository.findByEmail(requestBody.email()).ifPresent(talker -> {
+                log.warn("Endereço de e-mail {} já cadastrado", requestBody.email());
+                throw new TalkerAlreadyExistsException();
+            });
+
+            var talker = new Talker(
+                    requestBody.fullName(),
+                    birthDate,
+                    requestBody.email(),
+                    encoder.encode(requestBody.password()),
+                    type.get()
+            );
+
+            this.repository.save(talker);
+            log.info("Talker {} cadastrado com sucesso", requestBody.email());
+        } catch (IllegalArgumentException ex) {
+            throw new TypeNotFoundException();
         }
-
-        this.repository.findByEmail(requestBody.email()).ifPresent(talker -> {
-            log.warn("Endereço de e-mail {} já cadastrado", requestBody.email());
-            throw new TalkerAlreadyExistsException();
-        });
-
-        var talker = new Talker(
-                requestBody.fullName(),
-                birthDate,
-                requestBody.email(),
-                encoder.encode(requestBody.password())
-        );
-
-        this.repository.save(talker);
-        log.info("Talker {} cadastrado com sucesso", requestBody.email());
     }
 }

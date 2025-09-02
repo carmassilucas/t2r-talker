@@ -50,14 +50,19 @@ public class Talker {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @ManyToOne
+    @JoinColumn(name = "talker_type_id", nullable = false)
+    private TalkerType type;
+
     public Talker() {
     }
 
-    public Talker(String fullName, LocalDate birthDate, String email, String password) {
+    public Talker(String fullName, LocalDate birthDate, String email, String password, TalkerType type) {
         this.fullName = fullName;
         this.birthDate = birthDate;
         this.email = email;
         this.password = password;
+        this.type = type;
     }
 
     @Override
