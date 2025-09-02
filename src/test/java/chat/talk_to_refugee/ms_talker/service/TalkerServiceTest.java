@@ -5,7 +5,9 @@ import chat.talk_to_refugee.ms_talker.exception.TalkerAlreadyExistsException;
 import chat.talk_to_refugee.ms_talker.exception.TypeNotFoundException;
 import chat.talk_to_refugee.ms_talker.exception.UnderageException;
 import chat.talk_to_refugee.ms_talker.repository.TalkerRepository;
+import chat.talk_to_refugee.ms_talker.resource.dto.AuthRequest;
 import chat.talk_to_refugee.ms_talker.resource.dto.CreateTalker;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -13,11 +15,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 
 import java.util.Optional;
+import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -30,7 +37,10 @@ class TalkerServiceTest {
     private TalkerRepository repository;
 
     @Mock
-    private PasswordEncoder encoder;
+    private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private JwtEncoder jwtEncoder;
 
     @Nested
     class CreateTest {
@@ -50,7 +60,7 @@ class TalkerServiceTest {
 
             service.create(requestBody);
 
-            verify(encoder).encode(requestBody.password());
+            verify(passwordEncoder).encode(requestBody.password());
             verify(repository).save(any(Talker.class));
         }
 
@@ -67,7 +77,7 @@ class TalkerServiceTest {
 
             assertThrows(UnderageException.class, () -> service.create(requestBody));
 
-            verify(encoder, never()).encode(requestBody.password());
+            verify(passwordEncoder, never()).encode(requestBody.password());
             verify(repository, never()).save(any(Talker.class));
         }
 
@@ -88,7 +98,7 @@ class TalkerServiceTest {
 
             assertThrows(TalkerAlreadyExistsException.class, () -> service.create(requestBody));
 
-            verify(encoder, never()).encode(requestBody.password());
+            verify(passwordEncoder, never()).encode(requestBody.password());
             verify(repository, never()).save(any(Talker.class));
         }
 
@@ -105,8 +115,67 @@ class TalkerServiceTest {
 
             assertThrows(TypeNotFoundException.class, () -> service.create(requestBody));
 
-            verify(encoder, never()).encode(requestBody.password());
+            verify(passwordEncoder, never()).encode(requestBody.password());
             verify(repository, never()).save(any(Talker.class));
+        }
+    }
+
+    @Nested
+    class AuthTest {
+
+        @BeforeEach
+        void set_up() {
+            service = new TalkerService(repository, passwordEncoder, jwtEncoder, "ms-talker");
+        }
+
+        @Test
+        @DisplayName("Deve ser possível recuperar token de autenticação")
+        void should_be_possible_retrieve_authentication_token() {
+            var requestBody = new AuthRequest("teste@email.com", "password");
+            
+            var talker = new Talker();
+            talker.setPassword("password");
+            talker.setId(UUID.randomUUID());
+
+            var jwt = mock(Jwt.class);
+            
+            when(repository.findByEmail(requestBody.email())).thenReturn(Optional.of(talker));
+            when(passwordEncoder.matches(requestBody.password(), talker.getPassword())).thenReturn(true);
+            when(jwtEncoder.encode(any(JwtEncoderParameters.class))).thenReturn(jwt);
+            when(jwt.getTokenValue()).thenReturn("token");
+
+            var response = service.auth(requestBody);
+
+            assertNotNull(response);
+            assertEquals("token", response.accessToken());
+
+            verify(repository).findByEmail(requestBody.email());
+            verify(passwordEncoder).matches(requestBody.password(), talker.getPassword());
+            verify(jwtEncoder).encode(any(JwtEncoderParameters.class));
+        }
+
+        @Test
+        @DisplayName("Deve lançar exceção quando talker não encontrado")
+        void should_throw_exception_when_talker_not_found() {
+            var requestBody = new AuthRequest("teste@email.com", "password");
+
+            when(repository.findByEmail(requestBody.email())).thenReturn(Optional.empty());
+
+            assertThrows(BadCredentialsException.class, () -> service.auth(requestBody));
+        }
+
+        @Test
+        @DisplayName("Deve lançar exceção quando senha incorreta")
+        void should_throw_exception_when_talker_password_incorrect() {
+            var requestBody = new AuthRequest("teste@email.com", "password");
+
+            var talker = new Talker();
+            talker.setPassword("password");
+
+            when(repository.findByEmail(requestBody.email())).thenReturn(Optional.of(talker));
+            when(passwordEncoder.matches(requestBody.password(), talker.getPassword())).thenReturn(false);
+
+            assertThrows(BadCredentialsException.class, () -> service.auth(requestBody));
         }
     }
 }
