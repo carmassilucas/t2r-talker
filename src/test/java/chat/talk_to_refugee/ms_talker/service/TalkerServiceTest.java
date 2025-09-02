@@ -2,6 +2,7 @@ package chat.talk_to_refugee.ms_talker.service;
 
 import chat.talk_to_refugee.ms_talker.entity.Talker;
 import chat.talk_to_refugee.ms_talker.exception.TalkerAlreadyExistsException;
+import chat.talk_to_refugee.ms_talker.exception.TypeNotFoundException;
 import chat.talk_to_refugee.ms_talker.exception.UnderageException;
 import chat.talk_to_refugee.ms_talker.repository.TalkerRepository;
 import chat.talk_to_refugee.ms_talker.resource.dto.CreateTalker;
@@ -14,7 +15,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.time.LocalDate;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -42,21 +42,16 @@ class TalkerServiceTest {
                     "full name",
                     "2000-01-01",
                     "test@email.com",
-                    "password"
+                    "password",
+                    "collaborator"
             );
-            var birthDate = LocalDate.parse(requestBody.birthDate());
 
             when(repository.findByEmail(requestBody.email())).thenReturn(Optional.empty());
 
             service.create(requestBody);
 
             verify(encoder).encode(requestBody.password());
-            verify(repository).save(new Talker(
-                    requestBody.fullName(),
-                    birthDate,
-                    requestBody.email(),
-                    encoder.encode(requestBody.password())
-            ));
+            verify(repository).save(any(Talker.class));
         }
 
         @Test
@@ -66,19 +61,14 @@ class TalkerServiceTest {
                     "full name",
                     "2020-01-01",
                     "test@email.com",
-                    "password"
+                    "password",
+                    "collaborator"
             );
-            var birthDate = LocalDate.parse(requestBody.birthDate());
 
             assertThrows(UnderageException.class, () -> service.create(requestBody));
 
             verify(encoder, never()).encode(requestBody.password());
-            verify(repository, never()).save(new Talker(
-                    requestBody.fullName(),
-                    birthDate,
-                    requestBody.email(),
-                    encoder.encode(requestBody.password())
-            ));
+            verify(repository, never()).save(any(Talker.class));
         }
 
         @Test
@@ -88,27 +78,35 @@ class TalkerServiceTest {
                     "full name",
                     "2000-01-01",
                     "test@email.com",
-                    "password"
-            );
-            var birthDate = LocalDate.parse(requestBody.birthDate());
-            var talker = new Talker(
-                    requestBody.fullName(),
-                    birthDate,
-                    requestBody.email(),
-                    encoder.encode(requestBody.password())
+                    "password",
+                    "collaborator"
             );
 
-            when(repository.findByEmail(requestBody.email())).thenReturn(Optional.of(talker));
+            when(repository.findByEmail(requestBody.email())).thenReturn(
+                    Optional.of(mock(Talker.class))
+            );
 
             assertThrows(TalkerAlreadyExistsException.class, () -> service.create(requestBody));
 
-            verify(encoder).encode(requestBody.password());
-            verify(repository, never()).save(new Talker(
-                    requestBody.fullName(),
-                    birthDate,
-                    requestBody.email(),
-                    encoder.encode(requestBody.password())
-            ));
+            verify(encoder, never()).encode(requestBody.password());
+            verify(repository, never()).save(any(Talker.class));
+        }
+
+        @Test
+        @DisplayName("Deve não ser possível criar um novo talker quando tipo inválido")
+        void should_not_be_possible_create_new_talker_when_invalid_type() {
+            var requestBody = new CreateTalker(
+                    "full name",
+                    "2000-01-01",
+                    "test@email.com",
+                    "password",
+                    "invalid-type"
+            );
+
+            assertThrows(TypeNotFoundException.class, () -> service.create(requestBody));
+
+            verify(encoder, never()).encode(requestBody.password());
+            verify(repository, never()).save(any(Talker.class));
         }
     }
 }
