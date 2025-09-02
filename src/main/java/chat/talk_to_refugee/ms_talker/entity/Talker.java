@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
 
-@Entity(name = "talker")
+@Entity
 @Table(name = "tb_talker")
 public class Talker {
 
