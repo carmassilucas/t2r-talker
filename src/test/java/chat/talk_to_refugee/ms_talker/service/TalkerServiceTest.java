@@ -2,6 +2,7 @@ package chat.talk_to_refugee.ms_talker.service;
 
 import chat.talk_to_refugee.ms_talker.entity.Talker;
 import chat.talk_to_refugee.ms_talker.exception.TalkerAlreadyExistsException;
+import chat.talk_to_refugee.ms_talker.exception.TalkerNotFoundException;
 import chat.talk_to_refugee.ms_talker.exception.TypeNotFoundException;
 import chat.talk_to_refugee.ms_talker.exception.UnderageException;
 import chat.talk_to_refugee.ms_talker.repository.TalkerRepository;
@@ -176,6 +177,33 @@ class TalkerServiceTest {
             when(passwordEncoder.matches(requestBody.password(), talker.getPassword())).thenReturn(false);
 
             assertThrows(BadCredentialsException.class, () -> service.auth(requestBody));
+        }
+    }
+
+    @Nested
+    class ProfileTest {
+
+        @Test
+        @DisplayName("Deve ser possível recuperar perfil do talker")
+        void should_be_possible_retrieve_talker_profile() {
+            var uuid = UUID.randomUUID();
+            var talker = new Talker();
+            talker.setId(uuid);
+
+            when(repository.findById(uuid)).thenReturn(Optional.of(talker));
+
+            var profile = service.profile(uuid);
+
+            assertNotNull(profile);
+            assertEquals(uuid, profile.id());
+        }
+
+        @Test
+        @DisplayName("Deve lançar exceção quando talker não encontrado")
+        void should_throw_exception_when_talker_not_found() {
+            when(repository.findById(any())).thenReturn(Optional.empty());
+
+            assertThrows(TalkerNotFoundException.class, () -> service.profile(UUID.randomUUID()));
         }
     }
 }
