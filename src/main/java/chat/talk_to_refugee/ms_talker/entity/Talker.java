@@ -24,7 +24,7 @@ public class Talker {
     @Column(name = "profile_photo")
     private String profilePhoto;
 
-    @Column(name = "about_me")
+    @Column(name = "about_me", columnDefinition = "text")
     private String aboutMe;
 
     @Column(name = "birth_date", nullable = false)
