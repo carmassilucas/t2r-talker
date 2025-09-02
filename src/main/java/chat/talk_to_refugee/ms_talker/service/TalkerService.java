@@ -3,12 +3,14 @@ package chat.talk_to_refugee.ms_talker.service;
 import chat.talk_to_refugee.ms_talker.entity.Talker;
 import chat.talk_to_refugee.ms_talker.entity.TalkerType;
 import chat.talk_to_refugee.ms_talker.exception.TalkerAlreadyExistsException;
+import chat.talk_to_refugee.ms_talker.exception.TalkerNotFoundException;
 import chat.talk_to_refugee.ms_talker.exception.TypeNotFoundException;
 import chat.talk_to_refugee.ms_talker.exception.UnderageException;
 import chat.talk_to_refugee.ms_talker.repository.TalkerRepository;
 import chat.talk_to_refugee.ms_talker.resource.dto.AuthRequest;
 import chat.talk_to_refugee.ms_talker.resource.dto.AuthResponse;
 import chat.talk_to_refugee.ms_talker.resource.dto.CreateTalker;
+import chat.talk_to_refugee.ms_talker.resource.dto.TalkerProfile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +23,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Service
 public class TalkerService {
@@ -100,5 +103,21 @@ public class TalkerService {
         var token = this.jwtEncoder.encode(parameters).getTokenValue();
 
         return new AuthResponse(token, expiresIn);
+    }
+
+    public TalkerProfile profile(UUID id) {
+        var talker = this.repository.findById(id).orElseThrow(TalkerNotFoundException::new);
+
+        return new TalkerProfile(
+                talker.getId(),
+                talker.getFullName(),
+                talker.getProfilePhoto(),
+                talker.getAboutMe(),
+                talker.getBirthDate(),
+                talker.getCurrentlyCity(),
+                talker.getCurrentlyState(),
+                talker.getEmail(),
+                talker.getType()
+        );
     }
 }

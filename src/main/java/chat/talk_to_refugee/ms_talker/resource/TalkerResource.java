@@ -3,14 +3,15 @@ package chat.talk_to_refugee.ms_talker.resource;
 import chat.talk_to_refugee.ms_talker.resource.dto.AuthRequest;
 import chat.talk_to_refugee.ms_talker.resource.dto.AuthResponse;
 import chat.talk_to_refugee.ms_talker.resource.dto.CreateTalker;
+import chat.talk_to_refugee.ms_talker.resource.dto.TalkerProfile;
 import chat.talk_to_refugee.ms_talker.service.TalkerService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping(value = "/talkers")
@@ -31,5 +32,11 @@ public class TalkerResource {
     @PostMapping(value = "/auth")
     public ResponseEntity<AuthResponse> auth(@RequestBody @Valid AuthRequest requestBody) {
         return ResponseEntity.ok(this.service.auth(requestBody));
+    }
+
+    @GetMapping(value = "/profile")
+    public ResponseEntity<TalkerProfile> profile(JwtAuthenticationToken token) {
+        var id = UUID.fromString(token.getName());
+        return ResponseEntity.ok(this.service.profile(id));
     }
 }
