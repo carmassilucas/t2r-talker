@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 
 @Service
 public class CreateTalkerUseCase {
@@ -30,36 +31,35 @@ public class CreateTalkerUseCase {
 
     @Transactional
     public void execute(CreateTalker requestBody) {
-        log.info("Solicitação de cadastro de usuário {}", requestBody.email());
+        log.info("Solicitação de cadastro de talker {}", requestBody.email());
 
-        try {
-            var type = TalkerType.Values.valueOf(
-                    requestBody.type().toUpperCase()
-            );
+        var type = Arrays.stream(TalkerType.Values.values()).filter(
+                value -> value.name().equalsIgnoreCase(requestBody.type())
+        ).findFirst();
 
-            var birthDate = LocalDate.parse(requestBody.birthDate());
-            if (birthDate.isAfter(LocalDate.now().minusYears(18))) {
-                log.warn("Não é permitido o cadastro de menores de idade");
-                throw new UnderageException();
-            }
-
-            this.repository.findByEmail(requestBody.email()).ifPresent(talker -> {
-                log.warn("Endereço de e-mail {} já cadastrado", requestBody.email());
-                throw new TalkerAlreadyExistsException();
-            });
-
-            var talker = new Talker(
-                    requestBody.fullName(),
-                    birthDate,
-                    requestBody.email(),
-                    this.passwordEncoder.encode(requestBody.password()),
-                    type.get()
-            );
-
-            this.repository.save(talker);
-            log.info("Talker {} cadastrado com sucesso", requestBody.email());
-        } catch (IllegalArgumentException ex) {
+        if (type.isEmpty()) {
+            log.warn("Tipo {} não existe para talker", requestBody.type());
             throw new TypeNotFoundException();
         }
+
+        var birthDate = LocalDate.parse(requestBody.birthDate());
+        if (birthDate.isAfter(LocalDate.now().minusYears(18))) {
+            log.warn("Não é permitido o cadastro de menores de idade");
+            throw new UnderageException();
+        }
+
+        this.repository.findByEmail(requestBody.email()).ifPresent(talker -> {
+            log.warn("Endereço de e-mail já cadastrado");
+            throw new TalkerAlreadyExistsException();
+        });
+
+        var talker = this.repository.save(new Talker(
+                requestBody.fullName(),
+                birthDate,
+                requestBody.email(),
+                this.passwordEncoder.encode(requestBody.password()),
+                type.get().get()
+        ));
+        log.info("Talker {} cadastrado com sucesso", talker.getId());
     }
 }

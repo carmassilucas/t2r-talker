@@ -3,6 +3,8 @@ package chat.talk_to_refugee.ms_talker.usecase;
 import chat.talk_to_refugee.ms_talker.repository.TalkerRepository;
 import chat.talk_to_refugee.ms_talker.resource.dto.AuthRequest;
 import chat.talk_to_refugee.ms_talker.resource.dto.AuthResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -15,6 +17,8 @@ import java.time.Instant;
 
 @Service
 public class AuthenticateTalkerUseCase {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthenticateTalkerUseCase.class);
 
     private final TalkerRepository repository;
     private final PasswordEncoder passwordEncoder;
@@ -32,12 +36,15 @@ public class AuthenticateTalkerUseCase {
     }
 
     public AuthResponse execute(AuthRequest requestBody) {
-        var talker = this.repository.findByEmail(requestBody.email()).orElseThrow(() ->
-                new BadCredentialsException("user or password is invalid")
-        );
+        log.info("Solicitação de autenticação do talker com e-mail {}", requestBody.email());
+        var talker = this.repository.findByEmail(requestBody.email()).orElseThrow(() -> {
+            log.warn("Não autenticado, e-mail não encontrado");
+            return new BadCredentialsException("e-mail or password is invalid");
+        });
 
         if (!this.passwordEncoder.matches(requestBody.password(), talker.getPassword())) {
-            throw new BadCredentialsException("user or password is invalid");
+            log.warn("Não autenticado, senha incorreta");
+            throw new BadCredentialsException("e-mail or password is invalid");
         }
 
         var now = Instant.now();
@@ -53,6 +60,7 @@ public class AuthenticateTalkerUseCase {
         var parameters = JwtEncoderParameters.from(claims);
         var token = this.jwtEncoder.encode(parameters).getTokenValue();
 
+        log.info("Talker {} autenticado com sucesso, retornando token", talker.getId());
         return new AuthResponse(token, expiresIn);
     }
 }
