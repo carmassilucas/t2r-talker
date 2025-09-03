@@ -1,13 +1,11 @@
 package chat.talk_to_refugee.ms_talker.service;
 
 import chat.talk_to_refugee.ms_talker.entity.Talker;
-import chat.talk_to_refugee.ms_talker.exception.TalkerAlreadyExistsException;
-import chat.talk_to_refugee.ms_talker.exception.TalkerNotFoundException;
-import chat.talk_to_refugee.ms_talker.exception.TypeNotFoundException;
-import chat.talk_to_refugee.ms_talker.exception.UnderageException;
+import chat.talk_to_refugee.ms_talker.exception.*;
 import chat.talk_to_refugee.ms_talker.repository.TalkerRepository;
 import chat.talk_to_refugee.ms_talker.resource.dto.AuthRequest;
 import chat.talk_to_refugee.ms_talker.resource.dto.CreateTalker;
+import chat.talk_to_refugee.ms_talker.resource.dto.UpdatedPassword;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -204,6 +202,55 @@ class TalkerServiceTest {
             when(repository.findById(any())).thenReturn(Optional.empty());
 
             assertThrows(TalkerNotFoundException.class, () -> service.profile(UUID.randomUUID()));
+        }
+    }
+
+    @Nested
+    class UpdatePasswordTest {
+
+        @Test
+        @DisplayName("Deve ser possível atualizar a senha")
+        void should_be_possible_update_talker_password() {
+            var uuid = UUID.randomUUID();
+
+            var talker = new Talker();
+            talker.setId(uuid);
+
+            var requestBody = new UpdatedPassword("current password", "new password");
+
+            when(repository.findById(uuid)).thenReturn(Optional.of(talker));
+            when(passwordEncoder.matches(requestBody.currentPassword(), talker.getPassword())).thenReturn(true);
+            when(passwordEncoder.encode(requestBody.newPassword())).thenReturn("new password");
+
+            service.updatePassword(uuid, requestBody);
+
+            verify(repository).save(talker);
+        }
+
+        @Test
+        @DisplayName("Deve lançar exceção quando talker não encontrado")
+        void should_throw_exception_when_talker_not_found() {
+            var uuid =  UUID.randomUUID();
+            when(repository.findById(uuid)).thenReturn(Optional.empty());
+
+            assertThrows(TalkerNotFoundException.class, () -> service.updatePassword(uuid, mock(UpdatedPassword.class)));
+        }
+
+        @Test
+        @DisplayName("Deve lançar exceção quando senha incorreta")
+        void should_throw_exception_when_talker_password_incorrect() {
+            var uuid = UUID.randomUUID();
+
+            var talker = new Talker();
+            talker.setId(uuid);
+            talker.setPassword("current password");
+
+            var requestBody = new UpdatedPassword("current password", "new password");
+
+            when(repository.findById(uuid)).thenReturn(Optional.of(talker));
+            when(passwordEncoder.matches(requestBody.currentPassword(), talker.getPassword())).thenReturn(false);
+
+            assertThrows(PasswordNotMatchException.class, () -> service.updatePassword(uuid, requestBody));
         }
     }
 }
