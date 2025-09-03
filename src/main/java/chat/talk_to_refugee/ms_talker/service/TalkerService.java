@@ -1,12 +1,12 @@
 package chat.talk_to_refugee.ms_talker.service;
 
-import chat.talk_to_refugee.ms_talker.entity.Talker;
-import chat.talk_to_refugee.ms_talker.entity.TalkerType;
-import chat.talk_to_refugee.ms_talker.exception.*;
+import chat.talk_to_refugee.ms_talker.exception.PasswordNotMatchException;
+import chat.talk_to_refugee.ms_talker.exception.TalkerNotFoundException;
 import chat.talk_to_refugee.ms_talker.repository.TalkerRepository;
-import chat.talk_to_refugee.ms_talker.resource.dto.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import chat.talk_to_refugee.ms_talker.resource.dto.AuthRequest;
+import chat.talk_to_refugee.ms_talker.resource.dto.AuthResponse;
+import chat.talk_to_refugee.ms_talker.resource.dto.TalkerProfile;
+import chat.talk_to_refugee.ms_talker.resource.dto.UpdatedPassword;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,13 +17,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.UUID;
 
 @Service
 public class TalkerService {
-
-    private static final Logger log = LoggerFactory.getLogger(TalkerService.class);
 
     private final TalkerRepository repository;
     private final PasswordEncoder passwordEncoder;
@@ -39,41 +36,6 @@ public class TalkerService {
         this.passwordEncoder = passwordEncoder;
         this.jwtEncoder = jwtEncoder;
         this.applicationName = applicationName;
-    }
-
-    @Transactional
-    public void create(CreateTalker requestBody) {
-        log.info("Solicitação de cadastro de usuário {}", requestBody.email());
-
-        try {
-            var type = TalkerType.Values.valueOf(
-                    requestBody.type().toUpperCase()
-            );
-
-            var birthDate = LocalDate.parse(requestBody.birthDate());
-            if (birthDate.isAfter(LocalDate.now().minusYears(18))) {
-                log.warn("Não é permitido o cadastro de menores de idade");
-                throw new UnderageException();
-            }
-
-            this.repository.findByEmail(requestBody.email()).ifPresent(talker -> {
-                log.warn("Endereço de e-mail {} já cadastrado", requestBody.email());
-                throw new TalkerAlreadyExistsException();
-            });
-
-            var talker = new Talker(
-                    requestBody.fullName(),
-                    birthDate,
-                    requestBody.email(),
-                    this.passwordEncoder.encode(requestBody.password()),
-                    type.get()
-            );
-
-            this.repository.save(talker);
-            log.info("Talker {} cadastrado com sucesso", requestBody.email());
-        } catch (IllegalArgumentException ex) {
-            throw new TypeNotFoundException();
-        }
     }
 
     public AuthResponse auth(AuthRequest requestBody) {

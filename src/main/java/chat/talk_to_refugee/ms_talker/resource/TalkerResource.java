@@ -2,6 +2,7 @@ package chat.talk_to_refugee.ms_talker.resource;
 
 import chat.talk_to_refugee.ms_talker.resource.dto.*;
 import chat.talk_to_refugee.ms_talker.service.TalkerService;
+import chat.talk_to_refugee.ms_talker.usecase.CreateTalkerUseCase;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,14 +16,16 @@ import java.util.UUID;
 public class TalkerResource {
     
     private final TalkerService service;
+    private final CreateTalkerUseCase createTalker;
 
-    public TalkerResource(TalkerService service) {
+    public TalkerResource(TalkerService service, CreateTalkerUseCase createTalker) {
         this.service = service;
+        this.createTalker = createTalker;
     }
 
     @PostMapping
     public ResponseEntity<Void> create(@RequestBody @Valid CreateTalker requestBody) {
-        this.service.create(requestBody);
+        this.createTalker.execute(requestBody);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
