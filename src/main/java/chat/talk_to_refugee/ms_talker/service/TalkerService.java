@@ -2,15 +2,9 @@ package chat.talk_to_refugee.ms_talker.service;
 
 import chat.talk_to_refugee.ms_talker.entity.Talker;
 import chat.talk_to_refugee.ms_talker.entity.TalkerType;
-import chat.talk_to_refugee.ms_talker.exception.TalkerAlreadyExistsException;
-import chat.talk_to_refugee.ms_talker.exception.TalkerNotFoundException;
-import chat.talk_to_refugee.ms_talker.exception.TypeNotFoundException;
-import chat.talk_to_refugee.ms_talker.exception.UnderageException;
+import chat.talk_to_refugee.ms_talker.exception.*;
 import chat.talk_to_refugee.ms_talker.repository.TalkerRepository;
-import chat.talk_to_refugee.ms_talker.resource.dto.AuthRequest;
-import chat.talk_to_refugee.ms_talker.resource.dto.AuthResponse;
-import chat.talk_to_refugee.ms_talker.resource.dto.CreateTalker;
-import chat.talk_to_refugee.ms_talker.resource.dto.TalkerProfile;
+import chat.talk_to_refugee.ms_talker.resource.dto.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,6 +14,7 @@ import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -46,6 +41,7 @@ public class TalkerService {
         this.applicationName = applicationName;
     }
 
+    @Transactional
     public void create(CreateTalker requestBody) {
         log.info("Solicitação de cadastro de usuário {}", requestBody.email());
 
@@ -119,5 +115,19 @@ public class TalkerService {
                 talker.getEmail(),
                 talker.getType()
         );
+    }
+
+    @Transactional
+    public void updatePassword(UUID id, UpdatedPassword requestBody) {
+        var talker = this.repository.findById(id).orElseThrow(TalkerNotFoundException::new);
+
+        if (!this.passwordEncoder.matches(requestBody.currentPassword(), talker.getPassword())) {
+            throw new PasswordNotMatchException();
+        }
+
+        var password = this.passwordEncoder.encode(requestBody.newPassword());
+        talker.setPassword(password);
+
+        this.repository.save(talker);
     }
 }
