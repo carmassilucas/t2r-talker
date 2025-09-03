@@ -3,7 +3,6 @@ package chat.talk_to_refugee.ms_talker.service;
 import chat.talk_to_refugee.ms_talker.exception.PasswordNotMatchException;
 import chat.talk_to_refugee.ms_talker.exception.TalkerNotFoundException;
 import chat.talk_to_refugee.ms_talker.repository.TalkerRepository;
-import chat.talk_to_refugee.ms_talker.resource.dto.TalkerProfile;
 import chat.talk_to_refugee.ms_talker.resource.dto.UpdatedPassword;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -20,22 +19,6 @@ public class TalkerService {
     public TalkerService(TalkerRepository repository, PasswordEncoder passwordEncoder) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
-    }
-
-    public TalkerProfile profile(UUID id) {
-        var talker = this.repository.findById(id).orElseThrow(TalkerNotFoundException::new);
-
-        return new TalkerProfile(
-                talker.getId(),
-                talker.getFullName(),
-                talker.getProfilePhoto(),
-                talker.getAboutMe(),
-                talker.getBirthDate(),
-                talker.getCurrentlyCity(),
-                talker.getCurrentlyState(),
-                talker.getEmail(),
-                talker.getType()
-        );
     }
 
     @Transactional

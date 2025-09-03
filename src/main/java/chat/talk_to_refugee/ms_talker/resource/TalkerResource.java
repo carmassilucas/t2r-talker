@@ -4,6 +4,7 @@ import chat.talk_to_refugee.ms_talker.resource.dto.*;
 import chat.talk_to_refugee.ms_talker.service.TalkerService;
 import chat.talk_to_refugee.ms_talker.usecase.AuthenticateTalkerUseCase;
 import chat.talk_to_refugee.ms_talker.usecase.CreateTalkerUseCase;
+import chat.talk_to_refugee.ms_talker.usecase.TalkerProfileUseCase;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,13 +20,16 @@ public class TalkerResource {
     private final TalkerService service;
     private final CreateTalkerUseCase createTalker;
     private final AuthenticateTalkerUseCase authenticateTalker;
+    private final TalkerProfileUseCase talkerProfile;
 
     public TalkerResource(TalkerService service,
                           CreateTalkerUseCase createTalker,
-                          AuthenticateTalkerUseCase authenticateTalker) {
+                          AuthenticateTalkerUseCase authenticateTalker,
+                          TalkerProfileUseCase talkerProfile) {
         this.service = service;
         this.createTalker = createTalker;
         this.authenticateTalker = authenticateTalker;
+        this.talkerProfile = talkerProfile;
     }
 
     @PostMapping
@@ -42,7 +46,7 @@ public class TalkerResource {
     @GetMapping(value = "/profile")
     public ResponseEntity<TalkerProfile> profile(JwtAuthenticationToken token) {
         var id = UUID.fromString(token.getName());
-        return ResponseEntity.ok(this.service.profile(id));
+        return ResponseEntity.ok(this.talkerProfile.execute(id));
     }
 
     @PatchMapping(value = "/password")
