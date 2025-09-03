@@ -1,6 +1,8 @@
 package chat.talk_to_refugee.ms_talker.resource;
 
 import chat.talk_to_refugee.ms_talker.exception.CommonException;
+import chat.talk_to_refugee.ms_talker.exception.UpdateTalkerDataException;
+import chat.talk_to_refugee.ms_talker.resource.dto.InvalidParam;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -12,7 +14,12 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(CommonException.class)
-    public ProblemDetail handleCommonException(CommonException ex) {
+    public ProblemDetail commonException(CommonException ex) {
+        return ex.toProblemDetail();
+    }
+
+    @ExceptionHandler(UpdateTalkerDataException.class)
+    public ProblemDetail updateTalkerDataException(UpdateTalkerDataException ex) {
         return ex.toProblemDetail();
     }
 
@@ -35,8 +42,5 @@ public class GlobalExceptionHandler {
         problem.setProperty("invalid-params", invalidParams);
 
         return problem;
-    }
-
-    private record InvalidParam(String name, String reason) {
     }
 }
