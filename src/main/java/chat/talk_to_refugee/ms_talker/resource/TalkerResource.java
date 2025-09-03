@@ -2,6 +2,7 @@ package chat.talk_to_refugee.ms_talker.resource;
 
 import chat.talk_to_refugee.ms_talker.resource.dto.*;
 import chat.talk_to_refugee.ms_talker.service.TalkerService;
+import chat.talk_to_refugee.ms_talker.usecase.AuthenticateTalkerUseCase;
 import chat.talk_to_refugee.ms_talker.usecase.CreateTalkerUseCase;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -17,10 +18,14 @@ public class TalkerResource {
     
     private final TalkerService service;
     private final CreateTalkerUseCase createTalker;
+    private final AuthenticateTalkerUseCase authenticateTalker;
 
-    public TalkerResource(TalkerService service, CreateTalkerUseCase createTalker) {
+    public TalkerResource(TalkerService service,
+                          CreateTalkerUseCase createTalker,
+                          AuthenticateTalkerUseCase authenticateTalker) {
         this.service = service;
         this.createTalker = createTalker;
+        this.authenticateTalker = authenticateTalker;
     }
 
     @PostMapping
@@ -31,7 +36,7 @@ public class TalkerResource {
 
     @PostMapping(value = "/auth")
     public ResponseEntity<AuthResponse> auth(@RequestBody @Valid AuthRequest requestBody) {
-        return ResponseEntity.ok(this.service.auth(requestBody));
+        return ResponseEntity.ok(this.authenticateTalker.execute(requestBody));
     }
 
     @GetMapping(value = "/profile")
