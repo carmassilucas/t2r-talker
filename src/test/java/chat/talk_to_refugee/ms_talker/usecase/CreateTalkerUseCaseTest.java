@@ -15,8 +15,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
+import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -43,7 +44,11 @@ class CreateTalkerUseCaseTest {
                 "collaborator"
         );
 
+        var talker = mock(Talker.class);
+
         when(this.repository.findByEmail(requestBody.email())).thenReturn(Optional.empty());
+        when(this.repository.save(any(Talker.class))).thenReturn(talker);
+        when(talker.getId()).thenReturn(UUID.randomUUID());
 
         this.createTalker.execute(requestBody);
 
