@@ -1,10 +1,10 @@
 package chat.talk_to_refugee.ms_talker.resource;
 
 import chat.talk_to_refugee.ms_talker.resource.dto.*;
-import chat.talk_to_refugee.ms_talker.service.TalkerService;
 import chat.talk_to_refugee.ms_talker.usecase.AuthenticateTalkerUseCase;
 import chat.talk_to_refugee.ms_talker.usecase.CreateTalkerUseCase;
 import chat.talk_to_refugee.ms_talker.usecase.TalkerProfileUseCase;
+import chat.talk_to_refugee.ms_talker.usecase.UpdateTalkerPasswordUseCase;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,20 +16,21 @@ import java.util.UUID;
 @RestController
 @RequestMapping(value = "/talkers")
 public class TalkerResource {
-    
-    private final TalkerService service;
+
     private final CreateTalkerUseCase createTalker;
     private final AuthenticateTalkerUseCase authenticateTalker;
     private final TalkerProfileUseCase talkerProfile;
+    private final UpdateTalkerPasswordUseCase updateTalkerPassword;
 
-    public TalkerResource(TalkerService service,
-                          CreateTalkerUseCase createTalker,
+
+    public TalkerResource(CreateTalkerUseCase createTalker,
                           AuthenticateTalkerUseCase authenticateTalker,
-                          TalkerProfileUseCase talkerProfile) {
-        this.service = service;
+                          TalkerProfileUseCase talkerProfile,
+                          UpdateTalkerPasswordUseCase updateTalkerPassword) {
         this.createTalker = createTalker;
         this.authenticateTalker = authenticateTalker;
         this.talkerProfile = talkerProfile;
+        this.updateTalkerPassword = updateTalkerPassword;
     }
 
     @PostMapping
@@ -53,7 +54,7 @@ public class TalkerResource {
     public ResponseEntity<Void> updatePassword(@RequestBody @Valid UpdatedPassword requestBody,
                                                JwtAuthenticationToken token) {
         var id = UUID.fromString(token.getName());
-        this.service.updatePassword(id, requestBody);
+        this.updateTalkerPassword.execute(id, requestBody);
         return ResponseEntity.noContent().build();
     }
 }

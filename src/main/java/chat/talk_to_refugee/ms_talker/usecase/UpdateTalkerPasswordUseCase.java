@@ -1,4 +1,4 @@
-package chat.talk_to_refugee.ms_talker.service;
+package chat.talk_to_refugee.ms_talker.usecase;
 
 import chat.talk_to_refugee.ms_talker.exception.PasswordNotMatchException;
 import chat.talk_to_refugee.ms_talker.exception.TalkerNotFoundException;
@@ -11,18 +11,18 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 @Service
-public class TalkerService {
+public class UpdateTalkerPasswordUseCase {
 
     private final TalkerRepository repository;
     private final PasswordEncoder passwordEncoder;
 
-    public TalkerService(TalkerRepository repository, PasswordEncoder passwordEncoder) {
+    public UpdateTalkerPasswordUseCase(TalkerRepository repository, PasswordEncoder passwordEncoder) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
     }
 
     @Transactional
-    public void updatePassword(UUID id, UpdatedPassword requestBody) {
+    public void execute(UUID id, UpdatedPassword requestBody) {
         var talker = this.repository.findById(id).orElseThrow(TalkerNotFoundException::new);
 
         if (!this.passwordEncoder.matches(requestBody.currentPassword(), talker.getPassword())) {
