@@ -11,10 +11,15 @@ import java.util.List;
 public class UpdateTalkerDataException extends RuntimeException {
 
     private static final Logger log = LoggerFactory.getLogger(UpdateTalkerDataException.class);
+
     private final List<InvalidParam> invalidParams;
 
     public UpdateTalkerDataException(List<InvalidParam> invalidParams) {
         this.invalidParams = invalidParams;
+    }
+
+    public List<InvalidParam> getInvalidParams() {
+        return invalidParams;
     }
 
     public ProblemDetail toProblemDetail() {
