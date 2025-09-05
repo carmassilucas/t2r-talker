@@ -1,59 +1,42 @@
 package chat.talk_to_refugee.ms_talker.validator;
 
-import chat.talk_to_refugee.ms_talker.entity.TalkerType;
-import chat.talk_to_refugee.ms_talker.exception.UpdateTalkerDataException;
+import chat.talk_to_refugee.ms_talker.exception.InvalidDataException;
 import chat.talk_to_refugee.ms_talker.resource.dto.InvalidParam;
 import chat.talk_to_refugee.ms_talker.resource.dto.UpdateTalker;
+import chat.talk_to_refugee.ms_talker.validator.common.LocationValidator;
+import chat.talk_to_refugee.ms_talker.validator.common.TypeValidator;
+import chat.talk_to_refugee.ms_talker.validator.common.UnderageValidator;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 @Component
 public class UpdateTalkerValidator {
+
+    private final UnderageValidator underageValidator;
+    private final TypeValidator typeValidator;
+    private final LocationValidator locationValidator;
+
+    public UpdateTalkerValidator(UnderageValidator underageValidator,
+                                 TypeValidator typeValidator,
+                                 LocationValidator locationValidator) {
+        this.underageValidator = underageValidator;
+        this.typeValidator = typeValidator;
+        this.locationValidator = locationValidator;
+    }
 
     public void validate(UpdateTalker requestBody) {
 
         var invalidParams = new ArrayList<InvalidParam>();
 
-        validateBirthDate(requestBody.getBirthDate(), invalidParams);
-        validateType(requestBody.getType(), invalidParams);
-        validateLocation(requestBody.getCurrentlyState(), requestBody.getCurrentlyCity(), invalidParams);
+        this.underageValidator.validate(requestBody.getBirthDate()).ifPresent(invalidParams::add);
+        this.typeValidator.validate(requestBody.getType()).ifPresent(invalidParams::add);
+        this.locationValidator.validate(
+                requestBody.getCurrentlyState(), requestBody.getCurrentlyCity()
+        ).ifPresent(invalidParams::add);
 
         if (!invalidParams.isEmpty()) {
-            throw new UpdateTalkerDataException(invalidParams);
-        }
-    }
-
-    private void validateBirthDate(String birthDate, List<InvalidParam> invalidParams) {
-        if (birthDate == null || birthDate.isBlank()) {
-            return;
-        }
-
-        var date = LocalDate.parse(birthDate);
-        if (date.isAfter(LocalDate.now().minusYears(18))) {
-            invalidParams.add(new InvalidParam("birthDate", "user must be at least 18 years old"));
-        }
-    }
-
-    private void validateType(String type, List<InvalidParam> invalidParams) {
-        if (type == null || type.isBlank()) {
-            return;
-        }
-
-        var typeExists = Arrays.stream(TalkerType.Values.values())
-                .anyMatch(t -> t.getDescription().equals(type));
-
-        if (!typeExists) {
-            invalidParams.add(new InvalidParam("type", "type entered is invalid"));
-        }
-    }
-
-    private void validateLocation(String state, String city, List<InvalidParam> invalidParams) {
-        if ((city != null && !city.isBlank()) && (state == null || state.isBlank())) {
-            invalidParams.add(new InvalidParam("city", "city reported without corresponding state"));
+            throw new InvalidDataException(invalidParams);
         }
     }
 }

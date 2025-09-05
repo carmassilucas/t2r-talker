@@ -1,7 +1,7 @@
 package chat.talk_to_refugee.ms_talker.resource;
 
 import chat.talk_to_refugee.ms_talker.exception.CommonException;
-import chat.talk_to_refugee.ms_talker.exception.UpdateTalkerDataException;
+import chat.talk_to_refugee.ms_talker.exception.InvalidDataException;
 import chat.talk_to_refugee.ms_talker.resource.dto.InvalidParam;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -15,11 +15,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(CommonException.class)
     public ProblemDetail commonException(CommonException ex) {
-        return ex.toProblemDetail();
-    }
-
-    @ExceptionHandler(UpdateTalkerDataException.class)
-    public ProblemDetail updateTalkerDataException(UpdateTalkerDataException ex) {
         return ex.toProblemDetail();
     }
 
@@ -40,6 +35,15 @@ public class GlobalExceptionHandler {
                 .map(error -> new InvalidParam(error.getField(), error.getDefaultMessage()));
 
         problem.setProperty("invalid-params", invalidParams);
+
+        return problem;
+    }
+
+    @ExceptionHandler(InvalidDataException.class)
+    public ProblemDetail invalidDataException(InvalidDataException ex) {
+        var problem = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_ENTITY);
+        problem.setTitle("your request parameters didn't validate");
+        problem.setProperty("invalid-params", ex.getInvalidParams());
 
         return problem;
     }
