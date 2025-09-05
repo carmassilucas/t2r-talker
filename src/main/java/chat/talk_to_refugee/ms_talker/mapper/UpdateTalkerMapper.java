@@ -19,12 +19,12 @@ public interface UpdateTalkerMapper {
 
     @Condition
     default boolean isNotBlank(String value) {
-        return value != null && !value.trim().isEmpty();
+        return value != null && !value.isBlank();
     }
 
     @Named("mapType")
     default TalkerType mapType(String type) {
-        return TalkerType.Values.valueOf(type).get();
+        return TalkerType.Values.valueOf(type.toUpperCase()).get();
     }
 
     @Named("mapBirthDate")
