@@ -8,6 +8,7 @@ import chat.talk_to_refugee.ms_talker.validator.UpdateTalkerValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.UUID;
 
@@ -37,6 +38,12 @@ public class UpdateTalkerUseCase {
         this.validator.validate(requestBody);
 
         var updated = this.mapper.updateTalker(requestBody, talker);
+
+        if (StringUtils.hasText(requestBody.getCurrentlyState()) &&
+                !StringUtils.hasText(requestBody.getCurrentlyCity())) {
+            updated.setCurrentlyCity(null);
+        }
+
         this.repository.save(updated);
 
         log.info("Talker profile information updated successfully");
