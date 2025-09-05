@@ -14,13 +14,13 @@ import java.util.List;
 @Component
 public class UpdateTalkerValidator {
 
-    public void validate(UpdateTalker requestBody){
+    public void validate(UpdateTalker requestBody) {
 
         var invalidParams = new ArrayList<InvalidParam>();
 
-        validateBirthDate(requestBody.birthDate(), invalidParams);
-        validateType(requestBody.type(), invalidParams);
-        validateLocation(requestBody.currentlyState(), requestBody.currentlyCity(), invalidParams);
+        validateBirthDate(requestBody.getBirthDate(), invalidParams);
+        validateType(requestBody.getType(), invalidParams);
+        validateLocation(requestBody.getCurrentlyState(), requestBody.getCurrentlyCity(), invalidParams);
 
         if (!invalidParams.isEmpty()) {
             throw new UpdateTalkerDataException(invalidParams);
