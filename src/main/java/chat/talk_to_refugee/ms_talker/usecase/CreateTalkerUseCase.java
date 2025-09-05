@@ -3,10 +3,9 @@ package chat.talk_to_refugee.ms_talker.usecase;
 import chat.talk_to_refugee.ms_talker.entity.Talker;
 import chat.talk_to_refugee.ms_talker.entity.TalkerType;
 import chat.talk_to_refugee.ms_talker.exception.TalkerAlreadyExistsException;
-import chat.talk_to_refugee.ms_talker.exception.TypeNotFoundException;
-import chat.talk_to_refugee.ms_talker.exception.UnderageException;
 import chat.talk_to_refugee.ms_talker.repository.TalkerRepository;
 import chat.talk_to_refugee.ms_talker.resource.dto.CreateTalker;
+import chat.talk_to_refugee.ms_talker.validator.CreateTalkerValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -14,17 +13,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.Arrays;
 
 @Service
 public class CreateTalkerUseCase {
 
     private static final Logger log = LoggerFactory.getLogger(CreateTalkerUseCase.class);
 
+    private final CreateTalkerValidator validator;
     private final TalkerRepository repository;
     private final PasswordEncoder passwordEncoder;
 
-    public CreateTalkerUseCase(TalkerRepository repository, PasswordEncoder passwordEncoder) {
+    public CreateTalkerUseCase(CreateTalkerValidator validator,
+                               TalkerRepository repository,
+                               PasswordEncoder passwordEncoder) {
+        this.validator = validator;
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
     }
@@ -33,20 +35,7 @@ public class CreateTalkerUseCase {
     public void execute(CreateTalker requestBody) {
         log.info("Solicitação de cadastro de talker {}", requestBody.email());
 
-        var type = Arrays.stream(TalkerType.Values.values()).filter(
-                value -> value.name().equalsIgnoreCase(requestBody.type())
-        ).findFirst();
-
-        if (type.isEmpty()) {
-            log.warn("Tipo {} não existe para talker", requestBody.type());
-            throw new TypeNotFoundException();
-        }
-
-        var birthDate = LocalDate.parse(requestBody.birthDate());
-        if (birthDate.isAfter(LocalDate.now().minusYears(18))) {
-            log.warn("Não é permitido o cadastro de menores de idade");
-            throw new UnderageException();
-        }
+        this.validator.validate(requestBody);
 
         this.repository.findByEmail(requestBody.email()).ifPresent(talker -> {
             log.warn("Endereço de e-mail já cadastrado");
@@ -55,10 +44,10 @@ public class CreateTalkerUseCase {
 
         var talker = this.repository.save(new Talker(
                 requestBody.fullName(),
-                birthDate,
+                LocalDate.parse(requestBody.birthDate()),
                 requestBody.email(),
                 this.passwordEncoder.encode(requestBody.password()),
-                type.get().get()
+                TalkerType.Values.valueOf(requestBody.type().toUpperCase()).get()
         ));
         log.info("Talker {} cadastrado com sucesso", talker.getId());
     }
