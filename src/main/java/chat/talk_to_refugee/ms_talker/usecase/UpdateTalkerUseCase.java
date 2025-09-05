@@ -31,10 +31,10 @@ public class UpdateTalkerUseCase {
     public void execute(UUID id, UpdateTalker requestBody) {
         log.info("Updating talker profile information");
 
-        this.validator.validate(requestBody);
-
         var talker = this.repository.findById(id)
                 .orElseThrow(TalkerNotFoundException::new);
+
+        this.validator.validate(requestBody);
 
         var updated = this.mapper.updateTalker(requestBody, talker);
         this.repository.save(updated);
