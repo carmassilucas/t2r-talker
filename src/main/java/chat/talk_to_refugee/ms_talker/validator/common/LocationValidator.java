@@ -29,7 +29,7 @@ public class LocationValidator {
             return Optional.of(new InvalidParam("city", "city reported without corresponding state"));
         }
 
-        var locations = Optional.ofNullable(locationAPI.findLocationsByState(state))
+        var locations = Optional.ofNullable(this.locationAPI.findLocationsByState(state))
                 .orElse(Collections.emptyList());
 
         if (locations.isEmpty()) {
