@@ -18,18 +18,19 @@ public class TalkerResource {
     private final AuthenticateTalkerUseCase authenticateTalker;
     private final TalkerProfileUseCase talkerProfile;
     private final UpdateTalkerUseCase updateTalker;
-    private final UpdateTalkerPasswordUseCase updateTalkerPassword;
-
+    private final UpdatePasswordUseCase updatePassword;
+    private final UpdateProfilePhotoUseCase updateProfilePhoto;
 
     public TalkerResource(CreateTalkerUseCase createTalker,
                           AuthenticateTalkerUseCase authenticateTalker,
                           TalkerProfileUseCase talkerProfile, UpdateTalkerUseCase updateTalker,
-                          UpdateTalkerPasswordUseCase updateTalkerPassword) {
+                          UpdatePasswordUseCase updatePassword, UpdateProfilePhotoUseCase updateProfilePhoto) {
         this.createTalker = createTalker;
         this.authenticateTalker = authenticateTalker;
         this.talkerProfile = talkerProfile;
         this.updateTalker = updateTalker;
-        this.updateTalkerPassword = updateTalkerPassword;
+        this.updatePassword = updatePassword;
+        this.updateProfilePhoto = updateProfilePhoto;
     }
 
     @PostMapping
@@ -61,7 +62,15 @@ public class TalkerResource {
     public ResponseEntity<Void> updatePassword(@RequestBody @Valid UpdatedPassword requestBody,
                                                JwtAuthenticationToken token) {
         var id = UUID.fromString(token.getName());
-        this.updateTalkerPassword.execute(id, requestBody);
+        this.updatePassword.execute(id, requestBody);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping(value = "/profile-photo", consumes = "multipart/form-data")
+    public ResponseEntity<Void> updateProfilePhoto(@ModelAttribute @Valid UpdateProfilePhoto requestBody,
+                                                   JwtAuthenticationToken token) {
+        var id = UUID.fromString(token.getName());
+        this.updateProfilePhoto.execute(id, requestBody);
         return ResponseEntity.noContent().build();
     }
 }

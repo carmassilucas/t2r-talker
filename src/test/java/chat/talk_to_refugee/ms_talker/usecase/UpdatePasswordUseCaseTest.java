@@ -21,10 +21,10 @@ import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class UpdateTalkerPasswordUseCaseTest {
+class UpdatePasswordUseCaseTest {
 
     @InjectMocks
-    private UpdateTalkerPasswordUseCase updateTalkerPassword;
+    private UpdatePasswordUseCase updatePassword;
 
     @Mock
     private TalkerRepository repository;
@@ -46,7 +46,7 @@ class UpdateTalkerPasswordUseCaseTest {
         when(this.passwordEncoder.matches(requestBody.currentPassword(), talker.getPassword())).thenReturn(true);
         when(this.passwordEncoder.encode(requestBody.newPassword())).thenReturn("new password");
 
-        this.updateTalkerPassword.execute(uuid, requestBody);
+        this.updatePassword.execute(uuid, requestBody);
 
         verify(this.repository).save(talker);
     }
@@ -57,7 +57,7 @@ class UpdateTalkerPasswordUseCaseTest {
         var uuid =  UUID.randomUUID();
         when(this.repository.findById(uuid)).thenReturn(Optional.empty());
 
-        assertThrows(TalkerNotFoundException.class, () -> this.updateTalkerPassword.execute(uuid, mock(UpdatedPassword.class)));
+        assertThrows(TalkerNotFoundException.class, () -> this.updatePassword.execute(uuid, mock(UpdatedPassword.class)));
     }
 
     @Test
@@ -74,6 +74,6 @@ class UpdateTalkerPasswordUseCaseTest {
         when(this.repository.findById(uuid)).thenReturn(Optional.of(talker));
         when(this.passwordEncoder.matches(requestBody.currentPassword(), talker.getPassword())).thenReturn(false);
 
-        assertThrows(PasswordNotMatchException.class, () -> this.updateTalkerPassword.execute(uuid, requestBody));
+        assertThrows(PasswordNotMatchException.class, () -> this.updatePassword.execute(uuid, requestBody));
     }
 }

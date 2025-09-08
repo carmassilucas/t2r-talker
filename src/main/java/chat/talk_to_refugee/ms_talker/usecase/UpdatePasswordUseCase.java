@@ -13,14 +13,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 @Service
-public class UpdateTalkerPasswordUseCase {
+public class UpdatePasswordUseCase {
 
-    private static final Logger log = LoggerFactory.getLogger(UpdateTalkerPasswordUseCase.class);
+    private static final Logger log = LoggerFactory.getLogger(UpdatePasswordUseCase.class);
 
     private final TalkerRepository repository;
     private final PasswordEncoder passwordEncoder;
 
-    public UpdateTalkerPasswordUseCase(TalkerRepository repository, PasswordEncoder passwordEncoder) {
+    public UpdatePasswordUseCase(TalkerRepository repository, PasswordEncoder passwordEncoder) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
     }
