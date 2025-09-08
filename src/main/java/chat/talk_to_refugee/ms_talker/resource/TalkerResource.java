@@ -62,6 +62,20 @@ public class TalkerResource {
         return ResponseEntity.noContent().build();
     }
 
+    @PatchMapping(value = "/activate")
+    public ResponseEntity<Void> activate(JwtAuthenticationToken token) {
+        var id = UUID.fromString(token.getName());
+        this.useCases.toggleActive().execute(id, true);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping(value = "/disable")
+    public ResponseEntity<Void> disable(JwtAuthenticationToken token) {
+        var id = UUID.fromString(token.getName());
+        this.useCases.toggleActive().execute(id, false);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping(value = "/search")
     public ResponseEntity<Page<SearchTalkersResponse>> search(@ModelAttribute SearchTalkersRequest requestParams,
                                                               JwtAuthenticationToken token) {

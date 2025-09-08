@@ -61,8 +61,10 @@ public class Talker implements Serializable {
     @JsonProperty(access = JsonProperty.Access.READ_WRITE)
     private TalkerType type;
 
-    public Talker() {
+    @Column(name = "active", nullable = false)
+    private Boolean active;
 
+    public Talker() {
     }
 
     public Talker(String fullName, LocalDate birthDate, String email, String password, TalkerType type) {
@@ -169,6 +171,14 @@ public class Talker implements Serializable {
         this.type = type;
     }
 
+    public Boolean getActive() {
+        return active;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
@@ -178,14 +188,13 @@ public class Talker implements Serializable {
                 Objects.equals(birthDate, talker.birthDate) && Objects.equals(currentlyCity, talker.currentlyCity) &&
                 Objects.equals(currentlyState, talker.currentlyState) && Objects.equals(email, talker.email) &&
                 Objects.equals(password, talker.password) && Objects.equals(createdAt, talker.createdAt) &&
-                Objects.equals(updatedAt, talker.updatedAt) && Objects.equals(type, talker.type);
+                Objects.equals(updatedAt, talker.updatedAt) && Objects.equals(type, talker.type) &&
+                Objects.equals(active, talker.active);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(
-                id, fullName, profilePhoto, aboutMe, birthDate, currentlyCity, currentlyState, email,
-                password, createdAt, updatedAt, type
-        );
+        return Objects.hash(id, fullName, profilePhoto, aboutMe, birthDate, currentlyCity, currentlyState,
+                email, password, createdAt, updatedAt, type, active);
     }
 }

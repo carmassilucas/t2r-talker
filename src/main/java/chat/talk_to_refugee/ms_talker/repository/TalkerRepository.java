@@ -23,6 +23,7 @@ public interface TalkerRepository extends JpaRepository<Talker, UUID> {
                         "and (:currently_state is null or t.currently_state = :currently_state) " +
                         "and (:currently_city is null or t.currently_city = :currently_city) " +
                         "and (:type is null or t.talker_type_id in (:type)) " +
+                        "and t.active = true " +
                         "and t.id <> :id"
     )
     Page<Talker> findByNonBlankFilters(@Param("id") UUID id,

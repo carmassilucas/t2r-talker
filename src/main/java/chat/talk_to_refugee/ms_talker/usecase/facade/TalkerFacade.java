@@ -11,6 +11,7 @@ public record TalkerFacade(
         UpdateTalkerUseCase update,
         UpdatePasswordUseCase updatePassword,
         UpdateProfilePhotoUseCase updatePhoto,
-        SearchTalkersByFilterUseCase search
+        SearchTalkersByFilterUseCase search,
+        ToggleActiveProfileUseCase toggleActive
 ) {}
 
