@@ -1,7 +1,7 @@
 package chat.talk_to_refugee.ms_talker.resource;
 
 import chat.talk_to_refugee.ms_talker.resource.dto.*;
-import chat.talk_to_refugee.ms_talker.usecase.*;
+import chat.talk_to_refugee.ms_talker.usecase.facade.TalkerFacade;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -15,51 +15,34 @@ import java.util.UUID;
 @RequestMapping(value = "/talkers")
 public class TalkerResource {
 
-    private final CreateTalkerUseCase createTalker;
-    private final AuthenticateTalkerUseCase authenticateTalker;
-    private final TalkerProfileUseCase talkerProfile;
-    private final UpdateTalkerUseCase updateTalker;
-    private final UpdatePasswordUseCase updatePassword;
-    private final UpdateProfilePhotoUseCase updateProfilePhoto;
-    private final SearchTalkersByFilterUseCase searchTalkersByFilterUseCase;
+    private final TalkerFacade useCases;
 
-    public TalkerResource(CreateTalkerUseCase createTalker,
-                          AuthenticateTalkerUseCase authenticateTalker,
-                          TalkerProfileUseCase talkerProfile, UpdateTalkerUseCase updateTalker,
-                          UpdatePasswordUseCase updatePassword,
-                          UpdateProfilePhotoUseCase updateProfilePhoto,
-                          SearchTalkersByFilterUseCase searchTalkersByFilterUseCase) {
-        this.createTalker = createTalker;
-        this.authenticateTalker = authenticateTalker;
-        this.talkerProfile = talkerProfile;
-        this.updateTalker = updateTalker;
-        this.updatePassword = updatePassword;
-        this.updateProfilePhoto = updateProfilePhoto;
-        this.searchTalkersByFilterUseCase = searchTalkersByFilterUseCase;
+    public TalkerResource(TalkerFacade useCases) {
+        this.useCases = useCases;
     }
 
     @PostMapping
     public ResponseEntity<Void> create(@RequestBody @Valid CreateTalker requestBody) {
-        this.createTalker.execute(requestBody);
+        this.useCases.create().execute(requestBody);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @PostMapping(value = "/auth")
     public ResponseEntity<AuthResponse> auth(@RequestBody @Valid AuthRequest requestBody) {
-        return ResponseEntity.ok(this.authenticateTalker.execute(requestBody));
+        return ResponseEntity.ok(this.useCases.authenticate().execute(requestBody));
     }
 
     @GetMapping(value = "/profile")
     public ResponseEntity<TalkerProfile> profile(JwtAuthenticationToken token) {
         var id = UUID.fromString(token.getName());
-        return ResponseEntity.ok(this.talkerProfile.execute(id));
+        return ResponseEntity.ok(this.useCases.profile().execute(id));
     }
 
     @PutMapping
     public ResponseEntity<Void> update(@RequestBody @Valid UpdateTalker requestBody,
                                        JwtAuthenticationToken token) {
         var id = UUID.fromString(token.getName());
-        this.updateTalker.execute(id, requestBody);
+        this.useCases.update().execute(id, requestBody);
         return ResponseEntity.noContent().build();
     }
 
@@ -67,7 +50,7 @@ public class TalkerResource {
     public ResponseEntity<Void> updatePassword(@RequestBody @Valid UpdatedPassword requestBody,
                                                JwtAuthenticationToken token) {
         var id = UUID.fromString(token.getName());
-        this.updatePassword.execute(id, requestBody);
+        this.useCases.updatePassword().execute(id, requestBody);
         return ResponseEntity.noContent().build();
     }
 
@@ -75,7 +58,7 @@ public class TalkerResource {
     public ResponseEntity<Void> updateProfilePhoto(@ModelAttribute @Valid UpdateProfilePhoto requestBody,
                                                    JwtAuthenticationToken token) {
         var id = UUID.fromString(token.getName());
-        this.updateProfilePhoto.execute(id, requestBody);
+        this.useCases.updatePhoto().execute(id, requestBody);
         return ResponseEntity.noContent().build();
     }
 
@@ -84,7 +67,7 @@ public class TalkerResource {
                                                               JwtAuthenticationToken token) {
         var id = UUID.fromString(token.getName());
         return ResponseEntity.ok(
-                this.searchTalkersByFilterUseCase.execute(id, requestParams)
+                this.useCases.search().execute(id, requestParams)
         );
     }
 }
