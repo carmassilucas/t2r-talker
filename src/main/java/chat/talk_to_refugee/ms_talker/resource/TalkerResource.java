@@ -3,6 +3,7 @@ package chat.talk_to_refugee.ms_talker.resource;
 import chat.talk_to_refugee.ms_talker.resource.dto.*;
 import chat.talk_to_refugee.ms_talker.usecase.*;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -20,17 +21,21 @@ public class TalkerResource {
     private final UpdateTalkerUseCase updateTalker;
     private final UpdatePasswordUseCase updatePassword;
     private final UpdateProfilePhotoUseCase updateProfilePhoto;
+    private final SearchTalkersByFilterUseCase searchTalkersByFilterUseCase;
 
     public TalkerResource(CreateTalkerUseCase createTalker,
                           AuthenticateTalkerUseCase authenticateTalker,
                           TalkerProfileUseCase talkerProfile, UpdateTalkerUseCase updateTalker,
-                          UpdatePasswordUseCase updatePassword, UpdateProfilePhotoUseCase updateProfilePhoto) {
+                          UpdatePasswordUseCase updatePassword,
+                          UpdateProfilePhotoUseCase updateProfilePhoto,
+                          SearchTalkersByFilterUseCase searchTalkersByFilterUseCase) {
         this.createTalker = createTalker;
         this.authenticateTalker = authenticateTalker;
         this.talkerProfile = talkerProfile;
         this.updateTalker = updateTalker;
         this.updatePassword = updatePassword;
         this.updateProfilePhoto = updateProfilePhoto;
+        this.searchTalkersByFilterUseCase = searchTalkersByFilterUseCase;
     }
 
     @PostMapping
@@ -72,5 +77,14 @@ public class TalkerResource {
         var id = UUID.fromString(token.getName());
         this.updateProfilePhoto.execute(id, requestBody);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping(value = "/search")
+    public ResponseEntity<Page<SearchTalkersResponse>> search(@ModelAttribute SearchTalkersRequest requestParams,
+                                                              JwtAuthenticationToken token) {
+        var id = UUID.fromString(token.getName());
+        return ResponseEntity.ok(
+                this.searchTalkersByFilterUseCase.execute(id, requestParams)
+        );
     }
 }
