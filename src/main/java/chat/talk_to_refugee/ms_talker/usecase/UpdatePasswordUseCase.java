@@ -27,14 +27,12 @@ public class UpdatePasswordUseCase {
 
     @Transactional
     public void execute(UUID id, UpdatedPassword requestBody) {
-        log.info("Atualizando senha do talker {}", id);
-        var talker = this.repository.findById(id).orElseThrow(() -> {
-            log.warn("Talker {} não encontrado", id);
-            return new TalkerNotFoundException();
-        });
+        log.info("Updating talker password");
+
+        var talker = this.repository.findById(id)
+                .orElseThrow(TalkerNotFoundException::new);
 
         if (!this.passwordEncoder.matches(requestBody.currentPassword(), talker.getPassword())) {
-            log.warn("Senha atual incorreta fornecida para talker {}", id);
             throw new PasswordNotMatchException();
         }
 
@@ -42,6 +40,7 @@ public class UpdatePasswordUseCase {
         talker.setPassword(password);
 
         this.repository.save(talker);
-        log.info("Senha do talker {} atualizada", id);
+
+        log.info("Update done");
     }
 }

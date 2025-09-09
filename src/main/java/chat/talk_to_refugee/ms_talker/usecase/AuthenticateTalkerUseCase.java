@@ -36,15 +36,13 @@ public class AuthenticateTalkerUseCase {
     }
 
     public AuthResponse execute(AuthRequest requestBody) {
-        log.info("Solicitação de autenticação do talker com e-mail {}", requestBody.email());
-        var talker = this.repository.findByEmail(requestBody.email()).orElseThrow(() -> {
-            log.warn("Não autenticado, e-mail não encontrado");
-            return new BadCredentialsException("e-mail or password is invalid");
-        });
+        log.info("Trying to authenticate talker");
+
+        var talker = this.repository.findByEmail(requestBody.email())
+                .orElseThrow(() -> new BadCredentialsException("E-mail or password is invalid"));
 
         if (!this.passwordEncoder.matches(requestBody.password(), talker.getPassword())) {
-            log.warn("Não autenticado, senha incorreta");
-            throw new BadCredentialsException("e-mail or password is invalid");
+            throw new BadCredentialsException("E-mail or password is invalid");
         }
 
         var now = Instant.now();
@@ -60,7 +58,7 @@ public class AuthenticateTalkerUseCase {
         var parameters = JwtEncoderParameters.from(claims);
         var token = this.jwtEncoder.encode(parameters).getTokenValue();
 
-        log.info("Talker {} autenticado com sucesso, retornando token", talker.getId());
+        log.info("Authenticated talker, responding token");
         return new AuthResponse(token, expiresIn);
     }
 }

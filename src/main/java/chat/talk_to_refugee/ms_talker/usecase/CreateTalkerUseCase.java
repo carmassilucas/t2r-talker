@@ -33,22 +33,22 @@ public class CreateTalkerUseCase {
 
     @Transactional
     public void execute(CreateTalker requestBody) {
-        log.info("Solicitação de cadastro de talker {}", requestBody.email());
+        log.info("Registering a new talker");
 
         this.validator.validate(requestBody);
 
         this.repository.findByEmail(requestBody.email()).ifPresent(talker -> {
-            log.warn("Endereço de e-mail já cadastrado");
             throw new TalkerAlreadyExistsException();
         });
 
-        var talker = this.repository.save(new Talker(
+        this.repository.save(new Talker(
                 requestBody.fullName(),
                 LocalDate.parse(requestBody.birthDate()),
                 requestBody.email(),
                 this.passwordEncoder.encode(requestBody.password()),
                 TalkerType.Values.valueOf(requestBody.type().toUpperCase()).get()
         ));
-        log.info("Talker {} cadastrado com sucesso", talker.getId());
+
+        log.info("Registration completed successfully");
     }
 }

@@ -21,13 +21,13 @@ public class TalkerProfileUseCase {
     }
 
     public TalkerProfile execute(UUID id) {
-        log.debug("Recuperando perfil do talker {}", id);
-        var talker = this.repository.findById(id).orElseThrow(() -> {
-            log.debug("Talker {} não encontrado", id);
-            return new TalkerNotFoundException();
-        });
+        log.info("Recovering talker profile");
 
-        log.debug("Talker {} encontrado, mapeando e retornando perfil", id);
+        var talker = this.repository.findById(id)
+                .orElseThrow(TalkerNotFoundException::new);
+
+        log.info("Talker found, mapping and returning profile");
+
         return new TalkerProfile(
                 talker.getId(),
                 talker.getFullName(),
