@@ -3,6 +3,8 @@ package chat.talk_to_refugee.ms_talker.resource;
 import chat.talk_to_refugee.ms_talker.exception.CommonException;
 import chat.talk_to_refugee.ms_talker.exception.InvalidDataException;
 import chat.talk_to_refugee.ms_talker.resource.dto.InvalidParam;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -13,6 +15,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @ExceptionHandler(CommonException.class)
     public ProblemDetail commonException(CommonException ex) {
         return ex.toProblemDetail();
@@ -20,6 +24,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BadCredentialsException.class)
     public ProblemDetail badCredentialsException(BadCredentialsException ex) {
+        log.warn(ex.getMessage());
+
         var problem = ProblemDetail.forStatus(HttpStatus.UNAUTHORIZED);
         problem.setTitle(ex.getMessage());
 
