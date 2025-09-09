@@ -73,6 +73,7 @@ public class Talker implements Serializable {
         this.email = email;
         this.password = password;
         this.type = type;
+        this.active = true;
     }
 
     public UUID getId() {
