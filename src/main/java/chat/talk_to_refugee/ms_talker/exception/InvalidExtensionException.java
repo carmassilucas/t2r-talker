@@ -16,7 +16,7 @@ public class InvalidExtensionException extends CommonException {
         log.warn("Unexpected file extension");
 
         var problem = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_ENTITY);
-        problem.setTitle("Unexpected file extension");
+        problem.setTitle("Unexpected File Extension");
         problem.setDetail("Allowed extension: " + PROFILE_PHOTO_ALLOWED_EXTENSIONS);
 
         return problem;
