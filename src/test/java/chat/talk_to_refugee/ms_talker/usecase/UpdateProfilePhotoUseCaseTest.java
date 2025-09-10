@@ -20,6 +20,10 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.ssm.SsmClient;
+import software.amazon.awssdk.services.ssm.model.GetParameterRequest;
+import software.amazon.awssdk.services.ssm.model.GetParameterResponse;
+import software.amazon.awssdk.services.ssm.model.Parameter;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -41,6 +45,9 @@ class UpdateProfilePhotoUseCaseTest {
     @Mock
     private S3Client s3Client;
 
+    @Mock
+    private SsmClient ssmClient;
+
     @Value("${aws.localstack.endpoint}")
     private String endpoint;
 
@@ -50,7 +57,7 @@ class UpdateProfilePhotoUseCaseTest {
     @BeforeEach
     void set_up() {
         this.updateProfilePhoto = new UpdateProfilePhotoUseCase(
-                repository, s3Client, endpoint, bucketName
+                repository, s3Client, ssmClient, endpoint, bucketName
         );
     }
 
@@ -66,13 +73,43 @@ class UpdateProfilePhotoUseCaseTest {
         var requestBody = new UpdateProfilePhoto(file);
 
         var talker = new Talker();
-        talker.setProfilePhoto("profilePhoto");
-
+        talker.setProfilePhoto("profilePhoto.jpeg");
         when(this.repository.findById(uuid)).thenReturn(Optional.of(talker));
+
+        var parameter = Parameter.builder().value("JPG,JPEG,PNG,GIF").build();
+        var response = GetParameterResponse.builder().parameter(parameter).build();
+        when(this.ssmClient.getParameter(any(GetParameterRequest.class))).thenReturn(response);
 
         this.updateProfilePhoto.execute(uuid, requestBody);
 
+        verify(this.ssmClient).getParameter(any(GetParameterRequest.class));
         verify(this.s3Client).deleteObject(any(DeleteObjectRequest.class));
+        verify(this.s3Client).putObject(any(PutObjectRequest.class), any(RequestBody.class));
+        verify(this.repository).save(talker);
+    }
+
+    @Test
+        @DisplayName("Deve ser possível atualizar a foto de perfil quando atual nula")
+    void should_be_possible_update_profile_photo_when_current_one_null() throws IOException {
+        var uuid = UUID.randomUUID();
+
+        var file = mock(MultipartFile.class);
+        when(file.getOriginalFilename()).thenReturn("originalFilename.jpeg");
+        when(file.getBytes()).thenReturn(new byte[] {});
+
+        var requestBody = new UpdateProfilePhoto(file);
+
+        var talker = mock(Talker.class);
+        when(this.repository.findById(uuid)).thenReturn(Optional.of(talker));
+
+        var parameter = Parameter.builder().value("JPG,JPEG,PNG,GIF").build();
+        var response = GetParameterResponse.builder().parameter(parameter).build();
+        when(this.ssmClient.getParameter(any(GetParameterRequest.class))).thenReturn(response);
+
+        this.updateProfilePhoto.execute(uuid, requestBody);
+
+        verify(this.ssmClient).getParameter(any(GetParameterRequest.class));
+        verify(this.s3Client, never()).deleteObject(any(DeleteObjectRequest.class));
         verify(this.s3Client).putObject(any(PutObjectRequest.class), any(RequestBody.class));
         verify(this.repository).save(talker);
     }
