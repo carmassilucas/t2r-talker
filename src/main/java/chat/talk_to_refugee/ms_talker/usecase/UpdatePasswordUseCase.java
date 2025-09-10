@@ -2,11 +2,10 @@ package chat.talk_to_refugee.ms_talker.usecase;
 
 import chat.talk_to_refugee.ms_talker.exception.PasswordNotMatchException;
 import chat.talk_to_refugee.ms_talker.exception.TalkerNotFoundException;
-import chat.talk_to_refugee.ms_talker.repository.TalkerRepository;
 import chat.talk_to_refugee.ms_talker.resource.dto.UpdatedPassword;
+import chat.talk_to_refugee.ms_talker.usecase.facade.UpdatePasswordFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,29 +16,27 @@ public class UpdatePasswordUseCase {
 
     private static final Logger log = LoggerFactory.getLogger(UpdatePasswordUseCase.class);
 
-    private final TalkerRepository repository;
-    private final PasswordEncoder passwordEncoder;
+    private final UpdatePasswordFacade dependencies;
 
-    public UpdatePasswordUseCase(TalkerRepository repository, PasswordEncoder passwordEncoder) {
-        this.repository = repository;
-        this.passwordEncoder = passwordEncoder;
+    public UpdatePasswordUseCase(UpdatePasswordFacade dependencies) {
+        this.dependencies = dependencies;
     }
 
     @Transactional
     public void execute(UUID id, UpdatedPassword requestBody) {
         log.info("Updating talker password");
 
-        var talker = this.repository.findById(id)
+        var talker = this.dependencies.repository().findById(id)
                 .orElseThrow(TalkerNotFoundException::new);
 
-        if (!this.passwordEncoder.matches(requestBody.currentPassword(), talker.getPassword())) {
+        if (!this.dependencies.passwordEncoder().matches(requestBody.currentPassword(), talker.getPassword())) {
             throw new PasswordNotMatchException();
         }
 
-        var password = this.passwordEncoder.encode(requestBody.newPassword());
+        var password = this.dependencies.passwordEncoder().encode(requestBody.newPassword());
         talker.setPassword(password);
 
-        this.repository.save(talker);
+        this.dependencies.repository().save(talker);
 
         log.info("Update done");
     }
