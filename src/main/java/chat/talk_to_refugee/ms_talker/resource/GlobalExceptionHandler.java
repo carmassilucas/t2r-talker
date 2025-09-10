@@ -34,8 +34,10 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ProblemDetail methodArgumentNotValidException(MethodArgumentNotValidException ex) {
+        log.warn("Your request parameters didn't validate");
+
         var problem = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_ENTITY);
-        problem.setTitle("your request parameters didn't validate");
+        problem.setTitle("Your Request Parameters Didn't Validate");
 
         var invalidParams = ex.getBindingResult().getFieldErrors().stream()
                 .map(error -> new InvalidParam(error.getField(), error.getDefaultMessage()));
@@ -48,7 +50,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidDataException.class)
     public ProblemDetail invalidDataException(InvalidDataException ex) {
         var problem = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_ENTITY);
-        problem.setTitle("your request parameters didn't validate");
+        problem.setTitle("Your Request Parameters Didn't Validate");
         problem.setProperty("invalid-params", ex.getInvalidParams());
 
         return problem;
