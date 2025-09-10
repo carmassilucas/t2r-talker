@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -26,14 +27,9 @@ class UpdateTalkerValidatorTest {
     @InjectMocks
     private UpdateTalkerValidator validator;
 
-    @Mock
-    private UnderageValidator underageValidator;
-
-    @Mock
-    private TypeValidator typeValidator;
-
-    @Mock
-    private LocationValidator locationValidator;
+    @Mock private UnderageValidator underageValidator;
+    @Mock private TypeValidator typeValidator;
+    @Mock private LocationValidator locationValidator;
 
     @Test
     @DisplayName("Deve lançar exceção quando algum validator retornar parâmetro inválido")
@@ -44,6 +40,9 @@ class UpdateTalkerValidatorTest {
 
         when(requestBody.getBirthDate()).thenReturn(now);
         when(this.underageValidator.validate(now)).thenReturn(Optional.of(invalidParam));
+
+        when(requestBody.getType()).thenReturn("collaborator");
+        when(this.typeValidator.validate(List.of("collaborator"))).thenReturn(Optional.of(invalidParam));
 
         assertThrows(InvalidDataException.class, () -> this.validator.validate(requestBody));
     }

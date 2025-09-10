@@ -9,6 +9,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Collections;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -21,7 +24,7 @@ class TypeValidatorTest {
     @ValueSource(strings = { "collaborator", "immigrant", "refugee" })
     @DisplayName("Deve retornar vazio quando parâmetro válido")
     void should_returns_empty_when_valid_parameter(String type) {
-        var invalidParam = this.validator.validate(type);
+        var invalidParam = this.validator.validate(List.of(type));
 
         assertNotNull(invalidParam);
         assertTrue(invalidParam.isEmpty());
@@ -30,7 +33,7 @@ class TypeValidatorTest {
     @Test
     @DisplayName("Deve retornar vazio quando parâmetro vazio")
     void should_returns_empty_when_empty_parameter() {
-        var invalidParam = this.validator.validate("");
+        var invalidParam = this.validator.validate(Collections.emptyList());
 
         assertNotNull(invalidParam);
         assertTrue(invalidParam.isEmpty());
@@ -39,7 +42,7 @@ class TypeValidatorTest {
     @Test
     @DisplayName("Deve retornar parâmetro inválido quando tipo inválido")
     void should_returns_invalid_parameter_when_invalid_type() {
-        var invalidParam = this.validator.validate("invalid-type");
+        var invalidParam = this.validator.validate(List.of("invalid-type"));
         var expectedInvalidParam = new InvalidParam("type", "type not found");
 
         assertNotNull(invalidParam);

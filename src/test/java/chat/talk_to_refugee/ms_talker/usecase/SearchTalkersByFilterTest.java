@@ -8,8 +8,7 @@ import chat.talk_to_refugee.ms_talker.repository.TalkerRepository;
 import chat.talk_to_refugee.ms_talker.resource.dto.SearchTalkersRequest;
 import chat.talk_to_refugee.ms_talker.resource.dto.SearchTalkersResponse;
 import chat.talk_to_refugee.ms_talker.usecase.facade.SearchTalkersByFilterFacade;
-import chat.talk_to_refugee.ms_talker.validator.common.LocationValidator;
-import chat.talk_to_refugee.ms_talker.validator.common.TypeValidator;
+import chat.talk_to_refugee.ms_talker.validator.SearchTalkersByFilterValidator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,16 +33,14 @@ class SearchTalkersByFilterTest {
 
     @Mock private SearchTalkersByFilterFacade dependencies;
     @Mock private TalkerRepository repository;
-    @Mock private LocationValidator locationValidator;
-    @Mock private TypeValidator typeValidator;
+    @Mock private SearchTalkersByFilterValidator validator;
     @Mock private SearchTalkersByFilterMapper mapper;
 
     @Test
     @DisplayName("Deve ser possível buscar talkers por filtros")
     void should_be_possible_search_talkers_by_filter() {
         when(this.dependencies.repository()).thenReturn(this.repository);
-        when(this.dependencies.locationValidator()).thenReturn(this.locationValidator);
-        when(this.dependencies.typeValidator()).thenReturn(this.typeValidator);
+        when(this.dependencies.validator()).thenReturn(this.validator);
         when(this.dependencies.mapper()).thenReturn(this.mapper);
 
         var uuid = UUID.randomUUID();
@@ -53,10 +50,6 @@ class SearchTalkersByFilterTest {
         var talker = mock(Talker.class);
 
         when(this.repository.findById(uuid)).thenReturn(Optional.of(talker));
-        when(this.locationValidator.validate(
-                requestParams.currentlyState(), requestParams.currentlyCity()
-        )).thenReturn(Optional.empty());
-        when(this.typeValidator.validate(requestParams.type().getFirst())).thenReturn(Optional.empty());
         when(this.repository.findByNonBlankFilters(
                 uuid,
                 requestParams.fullName(),
@@ -69,8 +62,7 @@ class SearchTalkersByFilterTest {
 
         this.searchTalkersByFilter.execute(uuid, requestParams);
 
-        verify(this.locationValidator).validate(requestParams.currentlyState(), requestParams.currentlyCity());
-        verify(this.typeValidator).validate(requestParams.type().getFirst());
+        verify(this.validator).validate(requestParams);
         verify(this.repository).findByNonBlankFilters(
                 uuid,
                 requestParams.fullName(),
@@ -93,8 +85,7 @@ class SearchTalkersByFilterTest {
                 () -> this.searchTalkersByFilter.execute(UUID.randomUUID(), mock(SearchTalkersRequest.class))
         );
 
-        verify(this.locationValidator, never()).validate(anyString(), anyString());
-        verify(this.typeValidator, never()).validate(any());
+        verify(this.validator, never()).validate(any(SearchTalkersRequest.class));
         verify(this.repository, never()).findByNonBlankFilters(
                 any(UUID.class), anyString(), anyString(), anyString(), anyList(), any(PageRequest.class)
         );
@@ -102,10 +93,10 @@ class SearchTalkersByFilterTest {
     }
 
     @Test
-    @DisplayName("Deve lançar exceção quando localização inválida")
-    void should_throw_exception_when_invalid_location() {
+    @DisplayName("Deve lançar exceção quando parâmetros inválidos")
+    void should_throw_exception_when_invalid_params() {
         when(this.dependencies.repository()).thenReturn(this.repository);
-        when(this.dependencies.locationValidator()).thenReturn(this.locationValidator);
+        when(this.dependencies.validator()).thenReturn(this.validator);
 
         var uuid = UUID.randomUUID();
         var requestParams = new SearchTalkersRequest(
@@ -114,41 +105,11 @@ class SearchTalkersByFilterTest {
         var talker = mock(Talker.class);
 
         when(this.repository.findById(uuid)).thenReturn(Optional.of(talker));
-        doThrow(InvalidDataException.class).when(this.locationValidator).validate(
-                requestParams.currentlyState(), requestParams.currentlyCity()
-        );
+        doThrow(InvalidDataException.class).when(this.validator).validate(requestParams);
 
         assertThrows(InvalidDataException.class, () -> this.searchTalkersByFilter.execute(uuid, requestParams));
 
-        verify(this.locationValidator).validate(anyString(), anyString());
-        verify(this.typeValidator, never()).validate(any());
-        verify(this.repository, never()).findByNonBlankFilters(
-                any(UUID.class), anyString(), anyString(), anyString(), anyList(), any(PageRequest.class)
-        );
-        verify(this.mapper, never()).toSearchResponse(any(Talker.class));
-    }
-
-    @Test
-    @DisplayName("Deve lançar exceção quando tipo inválido")
-    void should_throw_exception_when_invalid_type() {
-        when(this.dependencies.repository()).thenReturn(this.repository);
-        when(this.dependencies.locationValidator()).thenReturn(this.locationValidator);
-        when(this.dependencies.typeValidator()).thenReturn(this.typeValidator);
-
-        var uuid = UUID.randomUUID();
-        var requestParams = new SearchTalkersRequest(
-                "full name", "currently state", "currently city", List.of("collaborator"), 0, 10
-        );
-
-        var talker = new Talker();
-        when(this.repository.findById(uuid)).thenReturn(Optional.of(talker));
-
-        doThrow(InvalidDataException.class).when(this.typeValidator).validate("collaborator");
-
-        assertThrows(InvalidDataException.class, () -> this.searchTalkersByFilter.execute(uuid, requestParams));
-
-        verify(this.locationValidator).validate(anyString(), anyString());
-        verify(this.typeValidator).validate(any());
+        verify(this.validator).validate(requestParams);
         verify(this.repository, never()).findByNonBlankFilters(
                 any(UUID.class), anyString(), anyString(), anyString(), anyList(), any(PageRequest.class)
         );
