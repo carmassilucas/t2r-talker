@@ -3,46 +3,38 @@ package chat.talk_to_refugee.ms_talker.usecase;
 import chat.talk_to_refugee.ms_talker.entity.TalkerType;
 import chat.talk_to_refugee.ms_talker.exception.InvalidDataException;
 import chat.talk_to_refugee.ms_talker.exception.TalkerNotFoundException;
-import chat.talk_to_refugee.ms_talker.mapper.SearchTalkersByFilterMapper;
-import chat.talk_to_refugee.ms_talker.repository.TalkerRepository;
 import chat.talk_to_refugee.ms_talker.resource.dto.InvalidParam;
 import chat.talk_to_refugee.ms_talker.resource.dto.SearchTalkersRequest;
 import chat.talk_to_refugee.ms_talker.resource.dto.SearchTalkersResponse;
-import chat.talk_to_refugee.ms_talker.validator.common.LocationValidator;
-import chat.talk_to_refugee.ms_talker.validator.common.TypeValidator;
+import chat.talk_to_refugee.ms_talker.usecase.facade.SearchTalkersByFilterFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class SearchTalkersByFilterUseCase {
 
     private static final Logger log = LoggerFactory.getLogger(SearchTalkersByFilterUseCase.class);
-    private final TalkerRepository repository;
-    private final LocationValidator locationValidator;
-    private final TypeValidator typeValidator;
-    private final SearchTalkersByFilterMapper mapper;
 
-    public SearchTalkersByFilterUseCase(TalkerRepository repository,
-                                        LocationValidator locationValidator,
-                                        TypeValidator typeValidator,
-                                        SearchTalkersByFilterMapper mapper) {
-        this.repository = repository;
-        this.locationValidator = locationValidator;
-        this.typeValidator = typeValidator;
-        this.mapper = mapper;
+    private final SearchTalkersByFilterFacade dependencies;
+
+    public SearchTalkersByFilterUseCase(SearchTalkersByFilterFacade dependencies) {
+        this.dependencies = dependencies;
     }
 
     public Page<SearchTalkersResponse> execute(UUID id, SearchTalkersRequest requestParams) {
         log.info("Searching for talkers by filtering by: {}", requestParams);
 
-        this.repository.findById(id).orElseThrow(TalkerNotFoundException::new);
+        this.dependencies.repository().findById(id).orElseThrow(TalkerNotFoundException::new);
 
-        handleInvalidParam(this.locationValidator.validate(
+        handleInvalidParam(this.dependencies.locationValidator().validate(
                 requestParams.currentlyState(), requestParams.currentlyCity()
         ));
 
@@ -50,7 +42,7 @@ public class SearchTalkersByFilterUseCase {
                 .orElse(Collections.emptyList())
                 .stream()
                 .map(t -> {
-                    handleInvalidParam(this.typeValidator.validate(t));
+                    handleInvalidParam(this.dependencies.typeValidator().validate(t));
                     return TalkerType.Values.valueOf(t.toUpperCase()).getId();
                 })
                 .toList();
@@ -58,14 +50,14 @@ public class SearchTalkersByFilterUseCase {
         var page = requestParams.page() == null ? 0 : requestParams.page();
         var size = requestParams.size() == null ? 10 : requestParams.size();
 
-        var talker = repository.findByNonBlankFilters(
+        var talker = this.dependencies.repository().findByNonBlankFilters(
                 id,
                 requestParams.fullName(),
                 requestParams.currentlyState(),
                 requestParams.currentlyCity(),
                 type,
                 PageRequest.of(page, size)
-        ).map(mapper::toSearchResponse);
+        ).map(this.dependencies.mapper()::toSearchResponse);
 
         log.info("Returning talkers, {} records were found", talker.getTotalElements());
 
