@@ -24,13 +24,13 @@ public class SearchTalkersByFilterValidator {
         this.typeValidator = typeValidator;
     }
 
-    public void validate(SearchTalkersRequest requestBody) {
+    public void validate(SearchTalkersRequest requestParams) {
         var invalidParams = new ArrayList<InvalidParam>();
 
-        this.typeValidator.validate(requestBody.type()).ifPresent(invalidParams::add);
+        this.typeValidator.validate(requestParams.type()).ifPresent(invalidParams::add);
 
         this.locationValidator.validate(
-                requestBody.currentlyState(), requestBody.currentlyCity()
+                requestParams.currentlyState(), requestParams.currentlyCity()
         ).ifPresent(invalidParams::add);
 
         if (!invalidParams.isEmpty()) {
