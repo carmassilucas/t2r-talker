@@ -1,7 +1,7 @@
 package chat.talk_to_refugee.ms_talker.resource;
 
 import chat.talk_to_refugee.ms_talker.resource.dto.*;
-import chat.talk_to_refugee.ms_talker.usecase.facade.TalkerFacade;
+import chat.talk_to_refugee.ms_talker.resource.facade.TalkerResourceFacade;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -15,9 +15,9 @@ import java.util.UUID;
 @RequestMapping(value = "/talkers")
 public class TalkerResource {
 
-    private final TalkerFacade useCases;
+    private final TalkerResourceFacade useCases;
 
-    public TalkerResource(TalkerFacade useCases) {
+    public TalkerResource(TalkerResourceFacade useCases) {
         this.useCases = useCases;
     }
 
