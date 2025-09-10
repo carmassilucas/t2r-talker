@@ -5,11 +5,17 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 
-import static chat.talk_to_refugee.ms_talker.util.AWSConstant.PROFILE_PHOTO_ALLOWED_EXTENSIONS;
+import java.util.stream.Stream;
 
 public class InvalidExtensionException extends CommonException {
 
     private static final Logger log = LoggerFactory.getLogger(InvalidExtensionException.class);
+
+    private final Stream<String> allowedExtensions;
+
+    public InvalidExtensionException(Stream<String> allowedExtensions) {
+        this.allowedExtensions = allowedExtensions;
+    }
 
     @Override
     public ProblemDetail toProblemDetail() {
@@ -17,9 +23,8 @@ public class InvalidExtensionException extends CommonException {
 
         var problem = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_ENTITY);
         problem.setTitle("Unexpected File Extension");
-        problem.setDetail("Allowed extension: " + PROFILE_PHOTO_ALLOWED_EXTENSIONS);
+        problem.setDetail("Allowed extension: " + allowedExtensions.toList());
 
         return problem;
-
     }
 }

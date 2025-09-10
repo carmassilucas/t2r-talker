@@ -14,13 +14,13 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.ssm.SsmClient;
+import software.amazon.awssdk.services.ssm.model.GetParameterRequest;
 
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.UUID;
-
-import static chat.talk_to_refugee.ms_talker.util.AWSConstant.PROFILE_PHOTO_ALLOWED_EXTENSIONS;
 
 @Service
 public class UpdateProfilePhotoUseCase {
@@ -29,16 +29,20 @@ public class UpdateProfilePhotoUseCase {
 
     private final TalkerRepository repository;
     private final S3Client s3Client;
+    private final SsmClient ssmClient;
     private final String endpoint;
     private final String bucketName;
 
-    public UpdateProfilePhotoUseCase(TalkerRepository repository, S3Client s3Client,
+    public UpdateProfilePhotoUseCase(TalkerRepository repository,
+                                     S3Client s3Client,
+                                     SsmClient ssmClient,
                                      @Value("${aws.localstack.endpoint}") String endpoint,
                                      @Value("${aws.localstack.s3.bucket-name}") String bucketName) {
         this.s3Client = s3Client;
         this.bucketName = bucketName;
         this.endpoint = endpoint;
         this.repository = repository;
+        this.ssmClient = ssmClient;
     }
 
     public void execute(UUID id, UpdateProfilePhoto requestBody) {
@@ -48,9 +52,7 @@ public class UpdateProfilePhotoUseCase {
             var talker = this.repository.findById(id)
                     .orElseThrow(TalkerNotFoundException::new);
 
-            if (!isValidExtension(requestBody.profilePhoto().getOriginalFilename())) {
-                throw new InvalidExtensionException();
-            }
+            checkExtensionValid(requestBody.profilePhoto().getOriginalFilename());
 
             var name = Instant.now().toEpochMilli() + ".jpeg";
             var request = PutObjectRequest.builder().bucket(bucketName).key(name).build();
@@ -77,12 +79,20 @@ public class UpdateProfilePhotoUseCase {
         log.info("Updating talker profile photo done");
     }
 
-    private boolean isValidExtension(String fileName) {
+    private void checkExtensionValid(String fileName) {
+        var response = ssmClient.getParameter(
+                GetParameterRequest.builder().name("PROFILE_PHOTO_ALLOWED_EXTENSIONS").build()
+        );
+        var allowedExtensions = Arrays.stream(response.parameter().value().split(","));
+
         if (fileName == null) {
-            return false;
+            throw new InvalidExtensionException(allowedExtensions);
         }
 
         var extension = fileName.substring(fileName.lastIndexOf('.') + 1);
-        return PROFILE_PHOTO_ALLOWED_EXTENSIONS.contains(extension.toUpperCase());
+
+        if (allowedExtensions.noneMatch(extension::equalsIgnoreCase)) {
+            throw new InvalidExtensionException(allowedExtensions);
+        }
     }
 }
