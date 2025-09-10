@@ -4,14 +4,13 @@ import chat.talk_to_refugee.ms_talker.usecase.*;
 import org.springframework.stereotype.Component;
 
 @Component
-public record TalkerResourceFacade(
-        CreateTalkerUseCase create,
-        AuthenticateTalkerUseCase authenticate,
-        TalkerProfileUseCase profile,
-        UpdateTalkerUseCase update,
-        UpdatePasswordUseCase updatePassword,
-        UpdateProfilePhotoUseCase updatePhoto,
-        SearchTalkersByFilterUseCase search,
-        ToggleActiveProfileUseCase toggleActive
+public record TalkerResourceFacade(CreateTalkerUseCase create,
+                                   AuthenticateTalkerUseCase authenticate,
+                                   TalkerProfileUseCase profile,
+                                   UpdateTalkerUseCase update,
+                                   UpdatePasswordUseCase updatePassword,
+                                   UpdateProfilePhotoUseCase updatePhoto,
+                                   SearchTalkersByFilterUseCase search,
+                                   ToggleActiveProfileUseCase toggleActive
 ) {}
 
