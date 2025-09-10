@@ -2,6 +2,7 @@ package chat.talk_to_refugee.ms_talker.usecase;
 
 import chat.talk_to_refugee.ms_talker.entity.Talker;
 import chat.talk_to_refugee.ms_talker.repository.TalkerRepository;
+import chat.talk_to_refugee.ms_talker.usecase.facade.ToggleActiveProfileFacade;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -22,13 +23,15 @@ class ToggleActiveProfileUseCaseTest {
     @InjectMocks
     private ToggleActiveProfileUseCase toggleActiveProfile;
 
-    @Mock
-    private TalkerRepository repository;
+    @Mock private ToggleActiveProfileFacade dependencies;
+    @Mock private TalkerRepository repository;
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     @DisplayName("Deve ser possível ativar ou desativar perfil")
     void should_be_possible_activate_or_deactivate_profile(Boolean activate) {
+        when(this.dependencies.repository()).thenReturn(this.repository);
+
         var uuid = UUID.randomUUID();
 
         var talker = new Talker();

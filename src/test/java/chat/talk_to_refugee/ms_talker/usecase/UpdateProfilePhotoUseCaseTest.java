@@ -6,15 +6,13 @@ import chat.talk_to_refugee.ms_talker.exception.InvalidExtensionException;
 import chat.talk_to_refugee.ms_talker.exception.TalkerNotFoundException;
 import chat.talk_to_refugee.ms_talker.repository.TalkerRepository;
 import chat.talk_to_refugee.ms_talker.resource.dto.UpdateProfilePhoto;
-import org.junit.jupiter.api.BeforeEach;
+import chat.talk_to_refugee.ms_talker.usecase.facade.UpdateProfilePhotoFacade;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -29,41 +27,32 @@ import java.io.IOException;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest
 @ExtendWith(MockitoExtension.class)
 class UpdateProfilePhotoUseCaseTest {
 
     @InjectMocks
     private UpdateProfilePhotoUseCase updateProfilePhoto;
 
-    @Mock
-    private TalkerRepository repository;
+    @Mock private UpdateProfilePhotoFacade dependencies;
+    @Mock private TalkerRepository repository;
+    @Mock private S3Client s3Client;
+    @Mock private SsmClient ssmClient;
 
-    @Mock
-    private S3Client s3Client;
-
-    @Mock
-    private SsmClient ssmClient;
-
-    @Value("${aws.localstack.endpoint}")
-    private String endpoint;
-
-    @Value("${aws.localstack.s3.bucket-name}")
-    private String bucketName;
-
-    @BeforeEach
-    void set_up() {
-        this.updateProfilePhoto = new UpdateProfilePhotoUseCase(
-                repository, s3Client, ssmClient, endpoint, bucketName
-        );
-    }
+    private final String endpoint = "endpoint";
+    private final String bucketName = "bucket-name";
 
     @Test
     @DisplayName("Deve ser possível atualizar a foto de perfil")
     void should_be_possible_update_profile_photo() throws IOException {
+        when(this.dependencies.repository()).thenReturn(this.repository);
+        when(this.dependencies.s3Client()).thenReturn(this.s3Client);
+        when(this.dependencies.ssmClient()).thenReturn(this.ssmClient);
+        when(this.dependencies.endpoint()).thenReturn(this.endpoint);
+        when(this.dependencies.bucketName()).thenReturn(this.bucketName);
+
         var uuid = UUID.randomUUID();
 
         var file = mock(MultipartFile.class);
@@ -89,8 +78,14 @@ class UpdateProfilePhotoUseCaseTest {
     }
 
     @Test
-        @DisplayName("Deve ser possível atualizar a foto de perfil quando atual nula")
+    @DisplayName("Deve ser possível atualizar a foto de perfil quando atual nula")
     void should_be_possible_update_profile_photo_when_current_one_null() throws IOException {
+        when(this.dependencies.repository()).thenReturn(this.repository);
+        when(this.dependencies.s3Client()).thenReturn(this.s3Client);
+        when(this.dependencies.ssmClient()).thenReturn(this.ssmClient);
+        when(this.dependencies.endpoint()).thenReturn(this.endpoint);
+        when(this.dependencies.bucketName()).thenReturn(this.bucketName);
+
         var uuid = UUID.randomUUID();
 
         var file = mock(MultipartFile.class);
@@ -117,6 +112,7 @@ class UpdateProfilePhotoUseCaseTest {
     @Test
     @DisplayName("Deve lançar exceção quando talker não encontrado")
     void should_throw_exception_when_talker_not_found() {
+        when(this.dependencies.repository()).thenReturn(this.repository);
         when(this.repository.findById(any(UUID.class))).thenReturn(Optional.empty());
 
         assertThrows(TalkerNotFoundException.class,
@@ -131,12 +127,19 @@ class UpdateProfilePhotoUseCaseTest {
     @Test
     @DisplayName("Deve lançar exceção quando extensão do arquivo inválida")
     void should_throw_exception_when_invalid_file_extension() {
+        when(this.dependencies.repository()).thenReturn(this.repository);
+        when(this.dependencies.ssmClient()).thenReturn(this.ssmClient);
+
         var uuid = UUID.randomUUID();
 
         var file = mock(MultipartFile.class);
         when(file.getOriginalFilename()).thenReturn("originalFilename.pdf");
 
         when(this.repository.findById(uuid)).thenReturn(Optional.of(mock(Talker.class)));
+
+        var parameter = Parameter.builder().value("JPG,JPEG,PNG,GIF").build();
+        var response = GetParameterResponse.builder().parameter(parameter).build();
+        when(this.ssmClient.getParameter(any(GetParameterRequest.class))).thenReturn(response);
 
         var requestBody = new UpdateProfilePhoto(file);
 
@@ -150,12 +153,19 @@ class UpdateProfilePhotoUseCaseTest {
     @Test
     @DisplayName("Deve lançar exceção quando nome do arquivo nulo")
     void should_throw_exception_when_file_name_null() {
+        when(this.dependencies.repository()).thenReturn(this.repository);
+        when(this.dependencies.ssmClient()).thenReturn(this.ssmClient);
+
         var uuid = UUID.randomUUID();
 
         var file = mock(MultipartFile.class);
         when(file.getOriginalFilename()).thenReturn(null);
 
         when(this.repository.findById(uuid)).thenReturn(Optional.of(mock(Talker.class)));
+
+        var parameter = Parameter.builder().value("JPG,JPEG,PNG,GIF").build();
+        var response = GetParameterResponse.builder().parameter(parameter).build();
+        when(this.ssmClient.getParameter(any(GetParameterRequest.class))).thenReturn(response);
 
         var requestBody = new UpdateProfilePhoto(file);
 
@@ -169,6 +179,11 @@ class UpdateProfilePhotoUseCaseTest {
     @Test
     @DisplayName("Deve lançar exceção quando erro ao armazenar foto de perfil")
     void should_throw_exception_when_error_storing_profile_photo() throws IOException {
+        when(this.dependencies.repository()).thenReturn(this.repository);
+        when(this.dependencies.s3Client()).thenReturn(this.s3Client);
+        when(this.dependencies.ssmClient()).thenReturn(this.ssmClient);
+        when(this.dependencies.bucketName()).thenReturn(this.bucketName);
+
         var uuid = UUID.randomUUID();
 
         var file = mock(MultipartFile.class);
@@ -179,6 +194,10 @@ class UpdateProfilePhotoUseCaseTest {
         var requestBody = new UpdateProfilePhoto(file);
 
         when(this.repository.findById(uuid)).thenReturn(Optional.of(mock(Talker.class)));
+
+        var parameter = Parameter.builder().value("JPG,JPEG,PNG,GIF").build();
+        var response = GetParameterResponse.builder().parameter(parameter).build();
+        when(this.ssmClient.getParameter(any(GetParameterRequest.class))).thenReturn(response);
 
         assertThrows(CommonException.class, () -> this.updateProfilePhoto.execute(uuid, requestBody));
 

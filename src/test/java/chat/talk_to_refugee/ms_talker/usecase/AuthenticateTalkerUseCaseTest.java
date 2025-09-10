@@ -3,15 +3,13 @@ package chat.talk_to_refugee.ms_talker.usecase;
 import chat.talk_to_refugee.ms_talker.entity.Talker;
 import chat.talk_to_refugee.ms_talker.repository.TalkerRepository;
 import chat.talk_to_refugee.ms_talker.resource.dto.AuthRequest;
-import org.junit.jupiter.api.BeforeEach;
+import chat.talk_to_refugee.ms_talker.usecase.facade.AuthenticateTalkerFacade;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -25,35 +23,25 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest
 @ExtendWith(MockitoExtension.class)
 class AuthenticateTalkerUseCaseTest {
 
     @InjectMocks
     private AuthenticateTalkerUseCase authenticateTalker;
 
-    @Mock
-    private TalkerRepository repository;
-
-    @Mock
-    private PasswordEncoder passwordEncoder;
-
-    @Mock
-    private JwtEncoder jwtEncoder;
-
-    @Value("${spring.application.name}")
-    private String applicationName;
-
-    @BeforeEach
-    void set_up() {
-        this.authenticateTalker = new AuthenticateTalkerUseCase(
-                repository, passwordEncoder, jwtEncoder, applicationName
-        );
-    }
+    @Mock private AuthenticateTalkerFacade dependencies;
+    @Mock private TalkerRepository repository;
+    @Mock private PasswordEncoder passwordEncoder;
+    @Mock private JwtEncoder jwtEncoder;
 
     @Test
     @DisplayName("Deve ser possível recuperar token de autenticação")
     void should_be_possible_retrieve_authentication_token() {
+        when(this.dependencies.repository()).thenReturn(this.repository);
+        when(this.dependencies.passwordEncoder()).thenReturn(this.passwordEncoder);
+        when(this.dependencies.jwtEncoder()).thenReturn(this.jwtEncoder);
+        when(this.dependencies.applicationName()).thenReturn("application-name");
+
         var requestBody = new AuthRequest("teste@email.com", "password");
 
         var talker = new Talker();
@@ -80,6 +68,8 @@ class AuthenticateTalkerUseCaseTest {
     @Test
     @DisplayName("Deve lançar exceção quando talker não encontrado")
     void should_throw_exception_when_talker_not_found() {
+        when(this.dependencies.repository()).thenReturn(this.repository);
+
         var requestBody = new AuthRequest("teste@email.com", "password");
 
         when(this.repository.findByEmail(requestBody.email())).thenReturn(Optional.empty());
@@ -90,6 +80,9 @@ class AuthenticateTalkerUseCaseTest {
     @Test
     @DisplayName("Deve lançar exceção quando senha incorreta")
     void should_throw_exception_when_talker_password_incorrect() {
+        when(this.dependencies.repository()).thenReturn(this.repository);
+        when(this.dependencies.passwordEncoder()).thenReturn(this.passwordEncoder);
+
         var requestBody = new AuthRequest("teste@email.com", "password");
 
         var talker = new Talker();

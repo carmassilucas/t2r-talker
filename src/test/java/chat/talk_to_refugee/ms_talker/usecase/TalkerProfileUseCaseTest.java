@@ -3,6 +3,7 @@ package chat.talk_to_refugee.ms_talker.usecase;
 import chat.talk_to_refugee.ms_talker.entity.Talker;
 import chat.talk_to_refugee.ms_talker.exception.TalkerNotFoundException;
 import chat.talk_to_refugee.ms_talker.repository.TalkerRepository;
+import chat.talk_to_refugee.ms_talker.usecase.facade.TalkerProfileFacade;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,12 +24,14 @@ class TalkerProfileUseCaseTest {
     @InjectMocks
     private TalkerProfileUseCase talkerProfile;
 
-    @Mock
-    private TalkerRepository repository;
+    @Mock private TalkerProfileFacade dependencies;
+    @Mock private TalkerRepository repository;
 
     @Test
     @DisplayName("Deve ser possível recuperar perfil do talker")
     void should_be_possible_retrieve_talker_profile() {
+        when(this.dependencies.repository()).thenReturn(this.repository);
+
         var uuid = UUID.randomUUID();
         var talker = new Talker();
         talker.setId(uuid);
@@ -44,6 +47,7 @@ class TalkerProfileUseCaseTest {
     @Test
     @DisplayName("Deve lançar exceção quando talker não encontrado")
     void should_throw_exception_when_talker_not_found() {
+        when(this.dependencies.repository()).thenReturn(this.repository);
         when(this.repository.findById(any())).thenReturn(Optional.empty());
 
         assertThrows(TalkerNotFoundException.class, () -> this.talkerProfile.execute(UUID.randomUUID()));

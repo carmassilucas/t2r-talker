@@ -5,6 +5,7 @@ import chat.talk_to_refugee.ms_talker.exception.TalkerNotFoundException;
 import chat.talk_to_refugee.ms_talker.mapper.UpdateTalkerMapper;
 import chat.talk_to_refugee.ms_talker.repository.TalkerRepository;
 import chat.talk_to_refugee.ms_talker.resource.dto.UpdateTalker;
+import chat.talk_to_refugee.ms_talker.usecase.facade.UpdateTalkerFacade;
 import chat.talk_to_refugee.ms_talker.validator.UpdateTalkerValidator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,18 +26,18 @@ class UpdateTalkerUseCaseTest {
     @InjectMocks
     private UpdateTalkerUseCase updateTalker;
 
-    @Mock
-    private TalkerRepository repository;
-
-    @Mock
-    private UpdateTalkerValidator validator;
-
-    @Mock
-    private UpdateTalkerMapper mapper;
+    @Mock private UpdateTalkerFacade dependencies;
+    @Mock private TalkerRepository repository;
+    @Mock private UpdateTalkerValidator validator;
+    @Mock private UpdateTalkerMapper mapper;
 
     @Test
     @DisplayName("Deve ser possível atualizar informações")
     void should_be_possible_update_talker_information() {
+        when(this.dependencies.repository()).thenReturn(this.repository);
+        when(this.dependencies.validator()).thenReturn(this.validator);
+        when(this.dependencies.mapper()).thenReturn(this.mapper);
+
         var uuid = UUID.randomUUID();
         var requestBody = mock(UpdateTalker.class);
         var talker = mock(Talker.class);
@@ -54,6 +55,8 @@ class UpdateTalkerUseCaseTest {
     @Test
     @DisplayName("Deve não ser possível atualizar informações quando talker não encontrado")
     void should_not_be_possible_update_talker_information_when_talker_not_found() {
+        when(this.dependencies.repository()).thenReturn(this.repository);
+
         var uuid = UUID.randomUUID();
         var requestBody = mock(UpdateTalker.class);
 

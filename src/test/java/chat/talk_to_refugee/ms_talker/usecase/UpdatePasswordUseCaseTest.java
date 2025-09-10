@@ -5,6 +5,7 @@ import chat.talk_to_refugee.ms_talker.exception.PasswordNotMatchException;
 import chat.talk_to_refugee.ms_talker.exception.TalkerNotFoundException;
 import chat.talk_to_refugee.ms_talker.repository.TalkerRepository;
 import chat.talk_to_refugee.ms_talker.resource.dto.UpdatedPassword;
+import chat.talk_to_refugee.ms_talker.usecase.facade.UpdatePasswordFacade;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,15 +27,16 @@ class UpdatePasswordUseCaseTest {
     @InjectMocks
     private UpdatePasswordUseCase updatePassword;
 
-    @Mock
-    private TalkerRepository repository;
-
-    @Mock
-    private PasswordEncoder passwordEncoder;
+    @Mock private UpdatePasswordFacade dependencies;
+    @Mock private TalkerRepository repository;
+    @Mock private PasswordEncoder passwordEncoder;
 
     @Test
     @DisplayName("Deve ser possível atualizar a senha")
     void should_be_possible_update_talker_password() {
+        when(this.dependencies.repository()).thenReturn(this.repository);
+        when(this.dependencies.passwordEncoder()).thenReturn(this.passwordEncoder);
+
         var uuid = UUID.randomUUID();
 
         var talker = new Talker();
@@ -54,6 +56,8 @@ class UpdatePasswordUseCaseTest {
     @Test
     @DisplayName("Deve lançar exceção quando talker não encontrado")
     void should_throw_exception_when_talker_not_found() {
+        when(this.dependencies.repository()).thenReturn(this.repository);
+
         var uuid =  UUID.randomUUID();
         when(this.repository.findById(uuid)).thenReturn(Optional.empty());
 
@@ -63,6 +67,9 @@ class UpdatePasswordUseCaseTest {
     @Test
     @DisplayName("Deve lançar exceção quando senha incorreta")
     void should_throw_exception_when_talker_password_incorrect() {
+        when(this.dependencies.repository()).thenReturn(this.repository);
+        when(this.dependencies.passwordEncoder()).thenReturn(this.passwordEncoder);
+
         var uuid = UUID.randomUUID();
 
         var talker = new Talker();

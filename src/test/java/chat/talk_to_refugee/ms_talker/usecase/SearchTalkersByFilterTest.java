@@ -7,6 +7,7 @@ import chat.talk_to_refugee.ms_talker.mapper.SearchTalkersByFilterMapper;
 import chat.talk_to_refugee.ms_talker.repository.TalkerRepository;
 import chat.talk_to_refugee.ms_talker.resource.dto.SearchTalkersRequest;
 import chat.talk_to_refugee.ms_talker.resource.dto.SearchTalkersResponse;
+import chat.talk_to_refugee.ms_talker.usecase.facade.SearchTalkersByFilterFacade;
 import chat.talk_to_refugee.ms_talker.validator.common.LocationValidator;
 import chat.talk_to_refugee.ms_talker.validator.common.TypeValidator;
 import org.junit.jupiter.api.DisplayName;
@@ -31,21 +32,20 @@ class SearchTalkersByFilterTest {
     @InjectMocks
     private SearchTalkersByFilterUseCase searchTalkersByFilter;
 
-    @Mock
-    private TalkerRepository repository;
-
-    @Mock
-    private LocationValidator locationValidator;
-
-    @Mock
-    private TypeValidator typeValidator;
-
-    @Mock
-    private SearchTalkersByFilterMapper mapper;
+    @Mock private SearchTalkersByFilterFacade dependencies;
+    @Mock private TalkerRepository repository;
+    @Mock private LocationValidator locationValidator;
+    @Mock private TypeValidator typeValidator;
+    @Mock private SearchTalkersByFilterMapper mapper;
 
     @Test
     @DisplayName("Deve ser possível buscar talkers por filtros")
     void should_be_possible_search_talkers_by_filter() {
+        when(this.dependencies.repository()).thenReturn(this.repository);
+        when(this.dependencies.locationValidator()).thenReturn(this.locationValidator);
+        when(this.dependencies.typeValidator()).thenReturn(this.typeValidator);
+        when(this.dependencies.mapper()).thenReturn(this.mapper);
+
         var uuid = UUID.randomUUID();
         var requestParams = new SearchTalkersRequest(
                 "full name", "currently state", "currently city", List.of("collaborator"), 0, 10
@@ -85,6 +85,8 @@ class SearchTalkersByFilterTest {
     @Test
     @DisplayName("Deve lançar exceção quando talker não encontrado")
     void should_throw_exception_when_talker_not_found() {
+        when(this.dependencies.repository()).thenReturn(this.repository);
+
         when(this.repository.findById(any(UUID.class))).thenReturn(Optional.empty());
 
         assertThrows(TalkerNotFoundException.class,
@@ -102,6 +104,9 @@ class SearchTalkersByFilterTest {
     @Test
     @DisplayName("Deve lançar exceção quando localização inválida")
     void should_throw_exception_when_invalid_location() {
+        when(this.dependencies.repository()).thenReturn(this.repository);
+        when(this.dependencies.locationValidator()).thenReturn(this.locationValidator);
+
         var uuid = UUID.randomUUID();
         var requestParams = new SearchTalkersRequest(
                 "full name", "currently state", "currently city", List.of("collaborator"), 0, 10
@@ -126,13 +131,18 @@ class SearchTalkersByFilterTest {
     @Test
     @DisplayName("Deve lançar exceção quando tipo inválido")
     void should_throw_exception_when_invalid_type() {
+        when(this.dependencies.repository()).thenReturn(this.repository);
+        when(this.dependencies.locationValidator()).thenReturn(this.locationValidator);
+        when(this.dependencies.typeValidator()).thenReturn(this.typeValidator);
+
         var uuid = UUID.randomUUID();
         var requestParams = new SearchTalkersRequest(
                 "full name", "currently state", "currently city", List.of("collaborator"), 0, 10
         );
-        var talker = mock(Talker.class);
 
+        var talker = new Talker();
         when(this.repository.findById(uuid)).thenReturn(Optional.of(talker));
+
         doThrow(InvalidDataException.class).when(this.typeValidator).validate("collaborator");
 
         assertThrows(InvalidDataException.class, () -> this.searchTalkersByFilter.execute(uuid, requestParams));
