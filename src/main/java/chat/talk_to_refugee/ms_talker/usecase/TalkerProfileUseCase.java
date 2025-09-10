@@ -1,8 +1,8 @@
 package chat.talk_to_refugee.ms_talker.usecase;
 
 import chat.talk_to_refugee.ms_talker.exception.TalkerNotFoundException;
-import chat.talk_to_refugee.ms_talker.repository.TalkerRepository;
 import chat.talk_to_refugee.ms_talker.resource.dto.TalkerProfile;
+import chat.talk_to_refugee.ms_talker.usecase.facade.TalkerProfileFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -14,16 +14,16 @@ public class TalkerProfileUseCase {
 
     private static final Logger log = LoggerFactory.getLogger(TalkerProfileUseCase.class);
 
-    private final TalkerRepository repository;
+    private final TalkerProfileFacade dependencies;
 
-    public TalkerProfileUseCase(TalkerRepository repository) {
-        this.repository = repository;
+    public TalkerProfileUseCase(TalkerProfileFacade dependencies) {
+        this.dependencies = dependencies;
     }
 
     public TalkerProfile execute(UUID id) {
         log.info("Recovering talker profile");
 
-        var talker = this.repository.findById(id)
+        var talker = this.dependencies.repository().findById(id)
                 .orElseThrow(TalkerNotFoundException::new);
 
         log.info("Talker found, mapping and returning profile");
